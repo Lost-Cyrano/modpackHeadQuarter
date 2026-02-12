@@ -1,1 +1,464 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Découpage de fichiers - 24.9 Mo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 2em;
+        }
+        
+        h2 {
+            color: #555;
+            margin: 20px 0 10px;
+            font-size: 1.5em;
+        }
+        
+        .upload-area {
+            border: 3px dashed #764ba2;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+        
+        .upload-area i {
+            font-size: 48px;
+            color: #764ba2;
+            margin-bottom: 10px;
+        }
+        
+        .file-info {
+            background: #f1f3f5;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .progress-container {
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #f1f3f5;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+            border-radius: 15px;
+        }
+        
+        .progress-text {
+            text-align: center;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .chunks-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .chunk-item {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chunk-item:last-child {
+            border-bottom: none;
+        }
+        
+        .chunk-name {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .chunk-size {
+            color: #6c757d;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: none;
+            outline: none;
+            margin-top: 10px;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .download-all {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✂️ Découpage de fichiers</h1>
+        <h2>Version 1.0 - Découpage</h2>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-content">
+                <div style="font-size: 48px; margin-bottom: 10px;">📁</div>
+                <h3>Cliquez ou déposez un fichier ici</h3>
+                <p style="color: #6c757d; margin-top: 10px;">Taille maximale par partie : 24.9 Mo</p>
+            </div>
+        </div>
+        
+        <input type="file" id="fileInput">
+        
+        <div id="fileInfo" class="file-info" style="display: none;">
+            <p><strong>Fichier :</strong> <span id="fileName"></span></p>
+            <p><strong>Taille :</strong> <span id="fileSize"></span></p>
+            <p><strong>Nombre de parties :</strong> <span id="chunksCount"></span></p>
+        </div>
+        
+        <div id="progressContainer" class="progress-container">
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <div id="progressText" class="progress-text">0%</div>
+        </div>
+        
+        <button id="processBtn" class="button" style="width: 100%;" disabled>📤 Découper et télécharger</button>
+        
+        <div id="chunksList" class="chunks-list" style="display: none;">
+            <h3 style="margin-bottom: 15px;">📦 Parties générées</h3>
+            <div id="chunksContainer"></div>
+            <button id="downloadAllBtn" class="button download-all">⬇️ Télécharger toutes les parties</button>
+        </div>
+        
+        <div class="footer">
+            <p>Parties de 24.9 Mo maximum - À assembler dans l'ordre numérique</p>
+        </div>
+    </div>
 
+    <script>
+        const CHUNK_MAX_SIZE = 24.9 * 1024 * 1024; // 24.9 Mo en octets
+        let currentFile = null;
+        let chunks = [];
+        let dataURL = null;
+
+        // Éléments DOM
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const chunksCount = document.getElementById('chunksCount');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const processBtn = document.getElementById('processBtn');
+        const chunksList = document.getElementById('chunksList');
+        const chunksContainer = document.getElementById('chunksContainer');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+
+        // Événements de l'upload area
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = '#e9ecef';
+        });
+        
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = '#f8f9fa';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = '#f8f9fa';
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        // Fonction pour formater la taille
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Gestion du fichier sélectionné
+        function handleFile(file) {
+            currentFile = file;
+            
+            // Afficher les infos du fichier
+            fileName.textContent = file.name;
+            fileSize.textContent = formatSize(file.size);
+            
+            // Calculer le nombre de parties
+            const chunksCountValue = Math.ceil(file.size / CHUNK_MAX_SIZE);
+            chunksCount.textContent = chunksCountValue;
+            
+            fileInfo.style.display = 'block';
+            processBtn.disabled = false;
+            
+            // Réinitialiser l'affichage
+            chunksList.style.display = 'none';
+            chunksContainer.innerHTML = '';
+            chunks = [];
+            progressContainer.style.display = 'none';
+            progressFill.style.width = '0%';
+            progressText.textContent = '0%';
+        }
+
+        // Traitement du découpage
+        processBtn.addEventListener('click', async () => {
+            if (!currentFile) return;
+            
+            processBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            chunks = [];
+            
+            try {
+                // Lire le fichier en Data URL
+                dataURL = await readFileAsDataURL(currentFile);
+                
+                // Découper la chaîne Data URL
+                const base64Data = dataURL.split(',')[1];
+                const totalSize = base64Data.length;
+                const chunksCountValue = Math.ceil(totalSize / CHUNK_MAX_SIZE);
+                
+                for (let i = 0; i < chunksCountValue; i++) {
+                    const start = i * CHUNK_MAX_SIZE;
+                    const end = Math.min(start + CHUNK_MAX_SIZE, totalSize);
+                    const chunkData = base64Data.slice(start, end);
+                    
+                    // Créer le contenu du chunk avec en-tête
+                    const chunkHeader = `data:${currentFile.type || 'application/octet-stream'};base64,`;
+                    const fullChunk = chunkHeader + chunkData;
+                    
+                    chunks.push({
+                        index: i,
+                        data: fullChunk,
+                        size: fullChunk.length
+                    });
+                    
+                    // Mettre à jour la progression
+                    const progress = ((i + 1) / chunksCountValue) * 100;
+                    progressFill.style.width = `${progress}%`;
+                    progressText.textContent = `${Math.round(progress)}% (Partie ${i + 1}/${chunksCountValue})`;
+                    
+                    // Permettre au navigateur de respirer
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+                
+                // Afficher la liste des chunks
+                displayChunksList();
+                
+                // Télécharger automatiquement la première partie comme exemple
+                if (chunks.length > 0) {
+                    downloadChunk(0);
+                }
+                
+                progressText.textContent = 'Terminé !';
+                
+            } catch (error) {
+                console.error('Erreur lors du découpage:', error);
+                alert('Erreur lors du découpage du fichier: ' + error.message);
+            } finally {
+                processBtn.disabled = false;
+            }
+        });
+
+        // Lire le fichier comme Data URL
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(e);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Afficher la liste des parties
+        function displayChunksList() {
+            chunksContainer.innerHTML = '';
+            
+            chunks.forEach((chunk, index) => {
+                const chunkElement = document.createElement('div');
+                chunkElement.className = 'chunk-item';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'chunk-name';
+                nameSpan.textContent = `${index + 1}/${chunks.length} - ${currentFile.name}.part${index + 1}`;
+                
+                const sizeSpan = document.createElement('span');
+                sizeSpan.className = 'chunk-size';
+                sizeSpan.textContent = formatSize(chunk.size);
+                
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'button';
+                downloadBtn.style.padding = '5px 15px';
+                downloadBtn.style.margin = '0';
+                downloadBtn.textContent = '⬇️';
+                downloadBtn.onclick = () => downloadChunk(index);
+                
+                chunkElement.appendChild(nameSpan);
+                chunkElement.appendChild(sizeSpan);
+                chunkElement.appendChild(downloadBtn);
+                
+                chunksContainer.appendChild(chunkElement);
+            });
+            
+            chunksList.style.display = 'block';
+        }
+
+        // Télécharger une partie spécifique
+        function downloadChunk(index) {
+            const chunk = chunks[index];
+            const blob = dataURLToBlob(chunk.data);
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentFile.name}.part${index + 1}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Convertir Data URL en Blob
+        function dataURLToBlob(dataURL) {
+            const parts = dataURL.split(',');
+            const mime = parts[0].match(/:(.*?);/)[1];
+            const bstr = atob(parts[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            
+            return new Blob([u8arr], { type: mime });
+        }
+
+        // Télécharger toutes les parties
+        downloadAllBtn.addEventListener('click', () => {
+            chunks.forEach((_, index) => {
+                setTimeout(() => {
+                    downloadChunk(index);
+                }, index * 500); // Délai entre chaque téléchargement
+            });
+        });
+
+        // Ajout d'un bouton pour la version reconstruction (lien)
+        const footer = document.querySelector('.footer');
+        const reconstructionLink = document.createElement('p');
+        reconstructionLink.style.marginTop = '20px';
+        reconstructionLink.innerHTML = '🔧 <a href="#" style="color: #764ba2; text-decoration: none;" onclick="alert(\'Version reconstruction à venir !\')">Version reconstruction</a> pour réassembler les parties';
+        footer.appendChild(reconstructionLink);
+    </script>
+</body>
+</html>
