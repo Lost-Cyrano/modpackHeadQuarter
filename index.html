@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reconstructeur GitHub - 24.9 Mo</title>
+    <title>Reconstructeur GitHub 24.9 Mo</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 900px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             background: #f5f5f5;
@@ -41,28 +41,29 @@
         }
         .progress-fill {
             height: 100%;
-            background: #4CAF50;
+            background: #2196F3;
             width: 0%;
             transition: width 0.3s;
         }
-        .stats, .error, .success {
+        .stats {
             margin-top: 20px;
             padding: 15px;
+            background: #f9f9f9;
             border-radius: 5px;
         }
-        .stats {
-            background: #f9f9f9;
-        }
         .error {
-            background: #FFEBEE;
             color: #f44336;
+            margin-top: 10px;
+            padding: 10px;
+            background: #FFEBEE;
+            border-radius: 5px;
         }
         .success {
-            background: #E8F5E9;
             color: #4CAF50;
+            font-weight: bold;
         }
-        button {
-            background: #2196F3;
+        .download-btn {
+            background: #4CAF50;
             color: white;
             border: none;
             padding: 12px 24px;
@@ -70,37 +71,56 @@
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
-            margin-top: 10px;
+            margin-top: 20px;
         }
-        button:disabled {
+        .download-btn:disabled {
             background: #ccc;
             cursor: not-allowed;
         }
         .file-list {
-            max-height: 200px;
+            margin-top: 20px;
+            max-height: 300px;
             overflow-y: auto;
             border: 1px solid #eee;
             border-radius: 5px;
-            margin: 10px 0;
-            padding: 10px;
         }
         .file-item {
-            padding: 5px;
+            padding: 8px;
             border-bottom: 1px solid #eee;
-            font-family: monospace;
+            font-size: 14px;
+        }
+        .file-item.success {
+            background: #F1F8E9;
+            color: #2E7D32;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .badge-success {
+            background: #4CAF50;
+            color: white;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔄 Reconstructeur GitHub Auto</h1>
-        <p>Reconstitue automatiquement un fichier à partir des parties stockées sur GitHub.</p>
+        <h1>📦 Reconstructeur GitHub 24.9 Mo</h1>
+        <p>Télécharge automatiquement les parties depuis GitHub et reconstitue le fichier original.</p>
         
-        <div id="repoInfo" class="info">
-            🔗 Dépôt détecté : <span id="repoUrlDisplay">aucun</span>
+        <div id="info" class="info">
+            <strong>🔗 Paramètres détectés :</strong><br>
+            <span id="repoUrl"></span><br>
+            <span id="fileName"></span>
         </div>
         
-        <div id="status" style="min-height: 50px;"></div>
+        <div id="fileListContainer" style="display: none;">
+            <h3>📑 Fichiers trouvés :</h3>
+            <div id="fileList" class="file-list"></div>
+        </div>
         
         <div id="progress" class="progress" style="display: none;">
             <div class="progress-bar">
@@ -109,294 +129,304 @@
             <p id="progressText">Initialisation...</p>
         </div>
         
-        <div id="fileListContainer" style="display: none;">
-            <h4>📄 Fichiers trouvés :</h4>
-            <div id="fileList" class="file-list"></div>
-        </div>
+        <div id="stats" class="stats" style="display: none;"></div>
+        <div id="error" class="error" style="display: none;"></div>
         
-        <div id="result"></div>
-        
-        <button id="startBtn" style="display: none;">🚀 Lancer la reconstruction</button>
-        <a id="downloadLink" style="display: none;"></a>
-        <button id="downloadBtn" style="display: none;">📥 Télécharger le fichier reconstitué</button>
+        <button id="downloadBtn" class="download-btn" style="display: none;">📥 Télécharger le fichier reconstitué</button>
     </div>
 
     <script>
         class GitHubReconstructor {
             constructor() {
-                this.apiBase = 'https://api.github.com';
-                this.repoInfo = null;
-                this.txtFiles = [];
-                this.fileContents = new Map();
+                this.repoUrl = null;
+                this.fileName = null;
+                this.files = new Map();
                 this.reconstructedDataUrl = null;
-                this.originalFileName = null;
-                
                 this.init();
             }
 
             init() {
-                // Analyser l'URL pour trouver le paramètre ?r=
-                const urlParams = new URLSearchParams(window.location.search);
-                const repoUrl = urlParams.get('r');
-                
-                if (repoUrl) {
-                    document.getElementById('repoUrlDisplay').textContent = repoUrl;
-                    this.parseGitHubUrl(repoUrl);
-                } else {
-                    document.getElementById('status').innerHTML = `
-                        <div class="error">
-                            ⚠️ Aucun dépôt spécifié. Ajoutez ?r=URL_DU_DEPOT à l'URL.
-                            <br><br>
-                            Exemple : ?r=https://github.com/utilisateur/depot/tree/main/dossier
-                        </div>
-                    `;
-                }
+                this.repoUrlSpan = document.getElementById('repoUrl');
+                this.fileNameSpan = document.getElementById('fileName');
+                this.fileList = document.getElementById('fileList');
+                this.fileListContainer = document.getElementById('fileListContainer');
+                this.progress = document.getElementById('progress');
+                this.progressFill = document.getElementById('progressFill');
+                this.progressText = document.getElementById('progressText');
+                this.stats = document.getElementById('stats');
+                this.error = document.getElementById('error');
+                this.downloadBtn = document.getElementById('downloadBtn');
+
+                this.parseUrlParams();
+                this.downloadBtn.addEventListener('click', () => this.downloadReconstructedFile());
             }
 
-            parseGitHubUrl(url) {
-                // Format: https://github.com/user/repo/tree/branch/path
-                const regex = /github\.com\/([^\/]+)\/([^\/]+)\/tree\/([^\/]+)\/?(.*)/;
-                const match = url.match(regex);
-                
-                if (!match) {
-                    this.showError('Format d\'URL GitHub invalide');
+            parseUrlParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                this.repoUrl = urlParams.get('r');
+                this.fileName = urlParams.get('f');
+
+                if (!this.repoUrl) {
+                    this.showError('❌ Paramètre "r" (URL GitHub) manquant dans l\'URL');
                     return;
                 }
-                
-                this.repoInfo = {
-                    owner: match[1],
-                    repo: match[2],
-                    branch: match[3],
-                    path: match[4] || ''
-                };
-                
-                document.getElementById('startBtn').style.display = 'inline-block';
-                document.getElementById('startBtn').onclick = () => this.fetchFiles();
-                
-                this.showStatus(`✅ Dépôt valide : ${this.repoInfo.owner}/${this.repoInfo.repo}`, 'success');
-            }
 
-            async fetchFiles() {
-                this.showProgress(true);
-                this.updateProgress(10, 'Recherche des fichiers texte...');
-                
-                try {
-                    // Récupérer la liste des fichiers du dossier
-                    const contents = await this.fetchRepoContents();
-                    
-                    // Filtrer les fichiers .txt qui suivent le format nombre.txt
-                    this.txtFiles = contents
-                        .filter(item => item.type === 'file')
-                        .filter(item => item.name.match(/^\d+\.txt$/))
-                        .sort((a, b) => {
-                            const numA = parseInt(a.name.match(/^\d+/)[0]);
-                            const numB = parseInt(b.name.match(/^\d+/)[0]);
-                            return numA - numB;
-                        });
-                    
-                    if (this.txtFiles.length === 0) {
-                        throw new Error('Aucun fichier .txt valide trouvé dans le dépôt');
-                    }
-                    
-                    this.displayFileList();
-                    
-                    this.updateProgress(30, `${this.txtFiles.length} fichiers trouvés, téléchargement...`);
-                    
-                    // Télécharger tous les fichiers
-                    await this.downloadAllFiles();
-                    
-                    this.updateProgress(80, 'Reconstruction du fichier...');
-                    
-                    // Reconstruire le fichier
-                    await this.reconstructFile();
-                    
-                } catch (error) {
-                    this.showError(`Erreur : ${error.message}`);
-                    console.error(error);
-                } finally {
-                    this.showProgress(false);
+                if (!this.fileName) {
+                    this.showError('❌ Paramètre "f" (nom du fichier) manquant dans l\'URL');
+                    return;
                 }
-            }
 
-            async fetchRepoContents() {
-                const { owner, repo, branch, path } = this.repoInfo;
-                const url = `${this.apiBase}/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+                this.repoUrlSpan.textContent = this.repoUrl;
+                this.fileNameSpan.textContent = `📄 Fichier cible : ${this.fileName}`;
                 
-                try {
-                    const response = await fetch(url);
-                    
-                    if (!response.ok) {
-                        if (response.status === 403) {
-                            throw new Error('Limite d\'API GitHub atteinte. Attendez quelques minutes.');
-                        }
-                        throw new Error(`Erreur GitHub: ${response.status}`);
-                    }
-                    
-                    return await response.json();
-                } catch (error) {
-                    throw new Error(`Impossible d'accéder au dépôt: ${error.message}`);
-                }
-            }
-
-            async downloadAllFiles() {
-                for (let i = 0; i < this.txtFiles.length; i++) {
-                    const file = this.txtFiles[i];
-                    
-                    this.updateProgress(
-                        30 + Math.floor((i / this.txtFiles.length) * 50),
-                        `Téléchargement ${file.name} (${i + 1}/${this.txtFiles.length})`
-                    );
-                    
-                    try {
-                        const content = await this.downloadFile(file.download_url);
-                        const fileNumber = parseInt(file.name.match(/^\d+/)[0]);
-                        this.fileContents.set(fileNumber, content);
-                        
-                        // Pause pour éviter de rate-limiter l'API
-                        if (i % 5 === 4) await new Promise(r => setTimeout(r, 100));
-                        
-                    } catch (error) {
-                        throw new Error(`Erreur téléchargement ${file.name}: ${error.message}`);
-                    }
-                }
-            }
-
-            async downloadFile(url) {
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error('Erreur téléchargement');
-                    return await response.text();
-                } catch {
-                    // Fallback sur l'API GitHub si le raw échoue
-                    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-                    const response = await fetch(proxyUrl);
-                    if (!response.ok) throw new Error('Erreur proxy');
-                    return await response.text();
-                }
-            }
-
-            async reconstructFile() {
-                // Vérifier la continuité des numéros
-                const maxNum = Math.max(...this.fileContents.keys());
-                let complete = true;
-                let missing = [];
-                
-                for (let i = 1; i <= maxNum; i++) {
-                    if (!this.fileContents.has(i)) {
-                        complete = false;
-                        missing.push(i);
-                    }
-                }
-                
-                if (!complete) {
-                    throw new Error(`Fichiers manquants: ${missing.join(', ')}.txt`);
-                }
-                
-                // Concaténer dans l'ordre
-                let fullDataUrl = '';
-                for (let i = 1; i <= maxNum; i++) {
-                    fullDataUrl += this.fileContents.get(i);
-                    
-                    // Pause toutes les 10 parties pour fichiers volumineux
-                    if (i % 10 === 0) await new Promise(r => setTimeout(r, 10));
-                }
-                
-                // Valider la Data URL
-                if (!fullDataUrl.startsWith('data:')) {
-                    throw new Error('Format Data URL invalide');
-                }
-                
-                this.reconstructedDataUrl = fullDataUrl;
-                
-                // Extraire le nom du fichier
-                try {
-                    const mimeMatch = fullDataUrl.match(/data:([^;]+);/);
-                    if (mimeMatch) {
-                        const mime = mimeMatch[1];
-                        const ext = mime.split('/')[1] || 'bin';
-                        this.originalFileName = `reconstruit_github.${ext}`;
-                    }
-                } catch {
-                    this.originalFileName = 'reconstruit_github.bin';
-                }
-                
-                this.updateProgress(100, '✅ Reconstruction terminée !');
-                
-                // Afficher le résultat
-                this.showResult();
-            }
-
-            displayFileList() {
-                const container = document.getElementById('fileListContainer');
-                const fileList = document.getElementById('fileList');
-                
-                fileList.innerHTML = '';
-                this.txtFiles.forEach(file => {
-                    const div = document.createElement('div');
-                    div.className = 'file-item';
-                    div.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(2)} Ko)`;
-                    fileList.appendChild(div);
-                });
-                
-                container.style.display = 'block';
-            }
-
-            showResult() {
-                const resultDiv = document.getElementById('result');
-                const downloadBtn = document.getElementById('downloadBtn');
-                
-                resultDiv.innerHTML = `
-                    <div class="success">
-                        <strong>✅ Reconstruction réussie !</strong><br>
-                        Fichier: ${this.originalFileName}<br>
-                        Taille: ${this.formatSize(this.reconstructedDataUrl.length)}<br>
-                        Parties: ${this.fileContents.size}
-                    </div>
-                `;
-                
-                downloadBtn.style.display = 'inline-block';
-                downloadBtn.onclick = () => this.downloadFile();
-            }
-
-            downloadFile() {
-                if (!this.reconstructedDataUrl) return;
-                
-                const link = document.createElement('a');
-                link.href = this.reconstructedDataUrl;
-                link.download = this.originalFileName;
-                link.click();
-                
-                this.showStatus('✅ Fichier téléchargé avec succès !', 'success');
-            }
-
-            updateProgress(percent, text) {
-                document.getElementById('progressFill').style.width = percent + '%';
-                document.getElementById('progressText').textContent = text;
-            }
-
-            showProgress(show) {
-                document.getElementById('progress').style.display = show ? 'block' : 'none';
-            }
-
-            showStatus(message, type = 'info') {
-                const statusDiv = document.getElementById('status');
-                statusDiv.innerHTML = `<div class="${type}">${message}</div>`;
+                // Démarrer automatiquement
+                this.startReconstruction();
             }
 
             showError(message) {
-                document.getElementById('status').innerHTML = `<div class="error">❌ ${message}</div>`;
+                this.error.style.display = 'block';
+                this.error.innerHTML = message;
+                console.error(message);
+            }
+
+            showProgress(message, percent) {
+                this.progress.style.display = 'block';
+                this.progressText.textContent = message;
+                this.progressFill.style.width = `${percent}%`;
+            }
+
+            // Convertir URL GitHub (version web) en API RAW
+            convertToRawUrl(url) {
+                // Pattern: https://github.com/user/repo/tree/branch/path
+                let raw = url.replace('github.com', 'raw.githubusercontent.com');
+                raw = raw.replace('/tree/', '/');
+                return raw;
+            }
+
+            // Lister les fichiers texte dans le dossier GitHub
+            async listTextFiles() {
+                this.showProgress('🔍 Analyse du dépôt GitHub...', 5);
+                
+                try {
+                    // Convertir l'URL web en API pour lister les fichiers
+                    let apiUrl;
+                    if (this.repoUrl.includes('/tree/')) {
+                        // C'est un dossier spécifique
+                        const parts = this.repoUrl.split('/tree/');
+                        const repoPath = parts[0].replace('github.com', 'api.github.com/repos');
+                        const branchPath = parts[1];
+                        const [branch, ...pathParts] = branchPath.split('/');
+                        const path = pathParts.join('/');
+                        
+                        apiUrl = `${repoPath}/contents/${path}?ref=${branch}`;
+                    } else {
+                        // C'est la racine du repo
+                        const repoPath = this.repoUrl.replace('github.com', 'api.github.com/repos');
+                        apiUrl = `${repoPath}/contents`;
+                    }
+
+                    console.log('API URL:', apiUrl);
+                    
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) {
+                        throw new Error(`Erreur GitHub API: ${response.status}`);
+                    }
+                    
+                    const contents = await response.json();
+                    
+                    // Filtrer les fichiers texte (1.txt, 2.txt, etc.)
+                    const textFiles = contents.filter(item => 
+                        item.type === 'file' && 
+                        item.name.match(/^\d+\.txt$/)
+                    );
+                    
+                    // Trier par numéro
+                    textFiles.sort((a, b) => {
+                        const numA = parseInt(a.name.match(/^(\d+)\.txt$/)[1], 10);
+                        const numB = parseInt(b.name.match(/^(\d+)\.txt$/)[1], 10);
+                        return numA - numB;
+                    });
+                    
+                    return textFiles;
+                    
+                } catch (error) {
+                    this.showError(`❌ Erreur lors de la lecture du dépôt: ${error.message}`);
+                    throw error;
+                }
+            }
+
+            // Télécharger un fichier depuis GitHub RAW
+            async downloadRawFile(rawUrl, fileName, index, total) {
+                try {
+                    this.showProgress(`📥 Téléchargement ${fileName} (${index}/${total})...`, 
+                        10 + (index / total) * 40);
+                    
+                    const response = await fetch(rawUrl);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const content = await response.text();
+                    
+                    // Extraire le numéro du fichier
+                    const num = parseInt(fileName.match(/^(\d+)\.txt$/)[1], 10);
+                    
+                    this.files.set(num, {
+                        name: fileName,
+                        content: content,
+                        size: content.length
+                    });
+                    
+                    // Afficher dans la liste
+                    this.addFileToList(fileName, content.length);
+                    
+                    return content;
+                    
+                } catch (error) {
+                    throw new Error(`Erreur téléchargement ${fileName}: ${error.message}`);
+                }
+            }
+
+            addFileToList(fileName, size) {
+                this.fileListContainer.style.display = 'block';
+                
+                const div = document.createElement('div');
+                div.className = 'file-item success';
+                div.innerHTML = `
+                    📄 ${fileName} 
+                    <small>(${this.formatSize(size)} caractères)</small>
+                    <span class="badge badge-success">OK</span>
+                `;
+                this.fileList.appendChild(div);
             }
 
             formatSize(bytes) {
                 if (bytes === 0) return '0';
                 const k = 1024;
-                const sizes = ['o', 'Ko', 'Mo', 'Go'];
+                const sizes = ['', 'K', 'M', 'G'];
                 const i = Math.floor(Math.log(bytes) / Math.log(k));
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
+
+            async startReconstruction() {
+                try {
+                    // Étape 1: Lister les fichiers
+                    const files = await this.listTextFiles();
+                    
+                    if (files.length === 0) {
+                        this.showError('❌ Aucun fichier .txt trouvé dans le dépôt');
+                        return;
+                    }
+                    
+                    this.showProgress(`✅ ${files.length} fichiers trouvés, téléchargement...`, 10);
+                    
+                    // Étape 2: Télécharger tous les fichiers
+                    const baseUrl = this.convertToRawUrl(this.repoUrl);
+                    
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        await this.downloadRawFile(
+                            file.download_url || `${baseUrl}/${file.name}`,
+                            file.name,
+                            i + 1,
+                            files.length
+                        );
+                        
+                        // Pause pour éviter de surcharger l'API
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                    
+                    // Étape 3: Vérifier qu'il n'y a pas de fichiers manquants
+                    const missingFiles = [];
+                    for (let i = 1; i <= files.length; i++) {
+                        if (!this.files.has(i)) {
+                            missingFiles.push(i);
+                        }
+                    }
+                    
+                    if (missingFiles.length > 0) {
+                        this.showError(`❌ Fichiers manquants: ${missingFiles.join(', ')}.txt`);
+                        return;
+                    }
+                    
+                    // Étape 4: Concaténer les fichiers
+                    await this.concatenateFiles(files.length);
+                    
+                } catch (error) {
+                    this.showError(`❌ Erreur: ${error.message}`);
+                }
+            }
+
+            async concatenateFiles(totalFiles) {
+                this.showProgress('🔄 Reconstruction du fichier...', 60);
+                
+                // Trier par numéro
+                const sortedFiles = Array.from(this.files.entries())
+                    .sort((a, b) => a[0] - b[0]);
+                
+                let fullDataUrl = '';
+                
+                for (let i = 0; i < sortedFiles.length; i++) {
+                    const [num, data] = sortedFiles[i];
+                    fullDataUrl += data.content;
+                    
+                    // Mise à jour progression
+                    this.showProgress(
+                        `🔄 Concaténation: ${i + 1}/${totalFiles}`, 
+                        60 + ((i + 1) / totalFiles) * 30
+                    );
+                    
+                    // Pause toutes les 10 parties
+                    if (i % 10 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+                }
+                
+                // Vérification
+                this.showProgress('✅ Validation...', 95);
+                
+                if (!fullDataUrl.startsWith('data:')) {
+                    throw new Error('Le fichier reconstitué ne commence pas par "data:"');
+                }
+                
+                this.reconstructedDataUrl = fullDataUrl;
+                
+                // Afficher les stats
+                const size = fullDataUrl.length;
+                this.stats.style.display = 'block';
+                this.stats.innerHTML = `
+                    <strong>📊 Reconstruction réussie !</strong><br>
+                    Fichier cible: ${this.fileName}<br>
+                    Parties reconstituées: ${totalFiles}<br>
+                    Taille Data URL: ${this.formatSize(size)}<br>
+                    <span class="success">✅ Prêt à télécharger</span>
+                `;
+                
+                this.showProgress('✅ Reconstruction terminée !', 100);
+                
+                // Afficher le bouton de téléchargement
+                this.downloadBtn.style.display = 'inline-block';
+            }
+
+            downloadReconstructedFile() {
+                if (!this.reconstructedDataUrl) return;
+                
+                try {
+                    const link = document.createElement('a');
+                    link.href = this.reconstructedDataUrl;
+                    link.download = this.fileName;
+                    link.click();
+                    
+                    this.error.style.display = 'block';
+                    this.error.className = 'success';
+                    this.error.innerHTML = '✅ Fichier téléchargé avec succès !';
+                } catch (error) {
+                    this.showError(`❌ Erreur de téléchargement: ${error.message}`);
+                }
+            }
         }
 
-        // Lancer l'application
+        // Initialisation automatique
         new GitHubReconstructor();
     </script>
 </body>
