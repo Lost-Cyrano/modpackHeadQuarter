@@ -3,615 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Découpage de fichiers - 24.9 Mo</title>
+    <title>Découpeur 24.9 Mo - Data URL</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 800px;
             margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 30px;
+            padding: 20px;
+            background: #f5f5f5;
         }
-        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
         h1 {
             color: #333;
-            margin-bottom: 20px;
-            text-align: center;
-            font-size: 2em;
+            margin-top: 0;
         }
-        
-        h2 {
-            color: #555;
-            margin: 20px 0 10px;
-            font-size: 1.5em;
-        }
-        
         .upload-area {
-            border: 3px dashed #764ba2;
-            border-radius: 15px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
             padding: 40px;
             text-align: center;
-            background: #f8f9fa;
             cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 20px;
-        }
-        
-        .upload-area:hover {
-            background: #e9ecef;
-            border-color: #667eea;
-        }
-        
-        .file-info {
-            background: #f1f3f5;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .progress-container {
+            transition: border 0.3s;
             margin: 20px 0;
-            display: none;
         }
-        
-        .progress-bar {
-            width: 100%;
-            height: 30px;
-            background: #f1f3f5;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 10px;
+        .upload-area:hover {
+            border-color: #666;
         }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            width: 0%;
-            transition: width 0.3s;
-            border-radius: 15px;
+        .upload-area.dragover {
+            border-color: #2196F3;
+            background: #E3F2FD;
         }
-        
-        .progress-text {
-            text-align: center;
-            font-weight: bold;
-            color: #555;
-        }
-        
-        .chunks-list {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
-        }
-        
-        .chunk-item {
-            padding: 10px;
-            border-bottom: 1px solid #dee2e6;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .chunk-item:last-child {
-            border-bottom: none;
-        }
-        
-        .chunk-number {
-            font-weight: bold;
-            color: #764ba2;
-            background: #f1f3f5;
-            padding: 3px 10px;
-            border-radius: 15px;
-            font-size: 0.9em;
-        }
-        
-        .chunk-size {
-            color: #6c757d;
-        }
-        
-        .button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        button {
+            background: #2196F3;
             color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 16px;
+            padding: 10px 20px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: transform 0.2s;
-            border: none;
-            outline: none;
-            margin-top: 10px;
+            font-size: 16px;
         }
-        
-        .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
-        
-        .button:disabled {
-            opacity: 0.5;
+        button:disabled {
+            background: #ccc;
             cursor: not-allowed;
-            transform: none;
         }
-        
-        .download-all {
-            display: block;
-            width: 100%;
+        .progress {
             margin-top: 20px;
-        }
-        
-        .download-one {
-            background: #28a745;
-            padding: 5px 15px;
-            font-size: 14px;
-        }
-        
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-            color: #6c757d;
-            font-size: 0.9em;
-        }
-        
-        input[type="file"] {
             display: none;
         }
-
-        .alert {
-            padding: 15px;
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
             border-radius: 10px;
-            margin-bottom: 20px;
-            display: none;
+            overflow: hidden;
         }
-
-        .alert.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-            display: block;
+        .progress-fill {
+            height: 100%;
+            background: #2196F3;
+            width: 0%;
+            transition: width 0.3s;
         }
-
-        .alert.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-            display: block;
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
         }
-
-        .zip-download {
-            background: #ffc107;
-            color: #333;
+        .error {
+            color: #f44336;
             margin-top: 10px;
         }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #764ba2;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .success {
+            color: #4CAF50;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>✂️ Découpage de fichiers</h1>
-        <h2>Version 2.0 - Découpage en parties numérotées</h2>
+        <h1>🔪 Découpeur de fichiers 24.9 Mo</h1>
+        <p>Découpe n'importe quel fichier en parties de 24.9 Mo (Data URL) et télécharge chaque partie.</p>
         
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-content">
-                <div style="font-size: 48px; margin-bottom: 10px;">📁</div>
-                <h3>Cliquez ou déposez un fichier ici</h3>
-                <p style="color: #6c757d; margin-top: 10px;">Taille maximale par partie : 24.9 Mo</p>
-                <p style="color: #6c757d; font-size: 0.9em; margin-top: 5px;">Les fichiers seront nommés "1", "2", "3"... dans l'ordre</p>
-            </div>
+        <div id="uploadArea" class="upload-area">
+            📁 Cliquez ou glissez-déposez un fichier ici
         </div>
+        <input type="file" id="fileInput" style="display: none;">
         
-        <input type="file" id="fileInput">
-        
-        <div id="fileInfo" class="file-info" style="display: none;">
-            <p><strong>Fichier source :</strong> <span id="fileName"></span></p>
-            <p><strong>Taille totale :</strong> <span id="fileSize"></span></p>
-            <p><strong>Nombre de parties :</strong> <span id="chunksCount"></span></p>
-            <p><strong>Nom des parties :</strong> <span id="chunkNames">1, 2, 3...</span></p>
-        </div>
-        
-        <div id="progressContainer" class="progress-container">
+        <div id="progress" class="progress">
             <div class="progress-bar">
                 <div id="progressFill" class="progress-fill"></div>
             </div>
-            <div id="progressText" class="progress-text">0%</div>
+            <p id="progressText">Préparation...</p>
         </div>
         
-        <div id="alertMessage" class="alert"></div>
+        <div id="stats" class="stats" style="display: none;"></div>
+        <div id="error" class="error"></div>
         
-        <button id="processBtn" class="button" style="width: 100%;" disabled>📤 Découper en parties numérotées</button>
-        
-        <div id="chunksList" class="chunks-list" style="display: none;">
-            <h3 style="margin-bottom: 15px;">📦 Parties générées</h3>
-            <div id="chunksContainer"></div>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button id="downloadAllBtn" class="button download-all">⬇️ Télécharger toutes les parties (ZIP)</button>
-                <button id="downloadAllSequentialBtn" class="button download-all" style="background: #17a2b8;">⬇️ Télécharger une par une</button>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>Parties de 24.9 Mo maximum - À assembler dans l'ordre numérique</p>
-            <p style="margin-top: 10px;">🔧 <a href="#" id="reconstructionLink" style="color: #764ba2; text-decoration: none;">Version reconstruction</a> pour réassembler les parties</p>
-        </div>
+        <button id="processBtn" disabled>🚀 Découper et télécharger</button>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script>
-        const CHUNK_MAX_SIZE = 24.9 * 1024 * 1024; // 24.9 Mo en octets (pour la chaîne base64)
-        let currentFile = null;
-        let chunks = [];
-        let originalFileName = '';
-
-        // Éléments DOM
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const fileInfo = document.getElementById('fileInfo');
-        const fileName = document.getElementById('fileName');
-        const fileSize = document.getElementById('fileSize');
-        const chunksCount = document.getElementById('chunksCount');
-        const chunkNames = document.getElementById('chunkNames');
-        const progressContainer = document.getElementById('progressContainer');
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
-        const processBtn = document.getElementById('processBtn');
-        const chunksList = document.getElementById('chunksList');
-        const chunksContainer = document.getElementById('chunksContainer');
-        const downloadAllBtn = document.getElementById('downloadAllBtn');
-        const downloadAllSequentialBtn = document.getElementById('downloadAllSequentialBtn');
-        const alertMessage = document.getElementById('alertMessage');
-
-        // Événements de l'upload area
-        uploadArea.addEventListener('click', () => fileInput.click());
+        const TAILLE_MAX = 24.9 * 1024 * 1024; // 26,112,614.4 octets
+        const CHUNK_SIZE = 1024 * 1024; // Taille de lecture : 1 Mo pour éviter de bloquer le thread
         
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.style.background = '#e9ecef';
-        });
-        
-        uploadArea.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            uploadArea.style.background = '#f8f9fa';
-        });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.style.background = '#f8f9fa';
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
+        class FileCutter {
+            constructor() {
+                this.file = null;
+                this.dataUrl = null;
+                this.chunks = [];
+                this.init();
             }
-        });
 
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleFile(e.target.files[0]);
+            init() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.fileInput = document.getElementById('fileInput');
+                this.processBtn = document.getElementById('processBtn');
+                this.progress = document.getElementById('progress');
+                this.progressFill = document.getElementById('progressFill');
+                this.progressText = document.getElementById('progressText');
+                this.stats = document.getElementById('stats');
+                this.error = document.getElementById('error');
+
+                this.bindEvents();
             }
-        });
 
-        // Fonction pour formater la taille
-        function formatSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        // Afficher un message
-        function showMessage(message, type = 'success') {
-            alertMessage.className = `alert ${type}`;
-            alertMessage.textContent = message;
-            setTimeout(() => {
-                alertMessage.style.display = 'none';
-            }, 5000);
-        }
-
-        // Gestion du fichier sélectionné
-        function handleFile(file) {
-            currentFile = file;
-            originalFileName = file.name;
-            
-            // Afficher les infos du fichier
-            fileName.textContent = file.name;
-            fileSize.textContent = formatSize(file.size);
-            
-            // Calculer le nombre de parties (en tenant compte de l'en-tête data URL)
-            // On estime que la chaîne base64 est ~33% plus grande que le binaire
-            const estimatedBase64Size = Math.ceil(file.size * 1.37);
-            const chunksCountValue = Math.ceil(estimatedBase64Size / CHUNK_MAX_SIZE);
-            chunksCount.textContent = chunksCountValue;
-            
-            fileInfo.style.display = 'block';
-            processBtn.disabled = false;
-            
-            // Réinitialiser l'affichage
-            chunksList.style.display = 'none';
-            chunksContainer.innerHTML = '';
-            chunks = [];
-            progressContainer.style.display = 'none';
-            progressFill.style.width = '0%';
-            progressText.textContent = '0%';
-        }
-
-        // Lire le fichier comme ArrayBuffer pour un traitement plus efficace
-        function readFileAsArrayBuffer(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = (e) => reject(e);
-                reader.readAsArrayBuffer(file);
-            });
-        }
-
-        // Convertir ArrayBuffer en base64
-        function arrayBufferToBase64(buffer) {
-            let binary = '';
-            const bytes = new Uint8Array(buffer);
-            const len = bytes.byteLength;
-            for (let i = 0; i < len; i++) {
-                binary += String.fromCharCode(bytes[i]);
+            bindEvents() {
+                // Upload area clicks
+                this.uploadArea.addEventListener('click', () => this.fileInput.click());
+                
+                // Drag & drop
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+                
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('dragover');
+                });
+                
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    const file = e.dataTransfer.files[0];
+                    if (file) this.handleFile(file);
+                });
+                
+                // File input change
+                this.fileInput.addEventListener('change', (e) => {
+                    if (e.target.files[0]) this.handleFile(e.target.files[0]);
+                });
+                
+                // Process button
+                this.processBtn.addEventListener('click', () => this.processFile());
             }
-            return btoa(binary);
-        }
 
-        // Traitement du découpage
-        processBtn.addEventListener('click', async () => {
-            if (!currentFile) return;
-            
-            processBtn.disabled = true;
-            progressContainer.style.display = 'block';
-            chunks = [];
-            
-            try {
-                // Lire le fichier en ArrayBuffer
-                const arrayBuffer = await readFileAsArrayBuffer(currentFile);
+            async handleFile(file) {
+                this.file = file;
+                this.error.textContent = '';
+                this.processBtn.disabled = false;
+                this.uploadArea.textContent = `📄 Fichier sélectionné : ${file.name} (${this.formatSize(file.size)})`;
                 
-                // Convertir en base64
-                const base64Data = arrayBufferToBase64(arrayBuffer);
+                // Message si le fichier est très gros
+                if (file.size > 500 * 1024 * 1024) {
+                    this.error.textContent = '⚠️ Fichier très volumineux (>500 Mo). Le traitement peut prendre plusieurs minutes.';
+                }
+            }
+
+            formatSize(bytes) {
+                if (bytes === 0) return '0 octets';
+                const k = 1024;
+                const sizes = ['octets', 'Ko', 'Mo', 'Go'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            // Convertit le fichier en Data URL de manière asynchrone
+            fileToDataURL(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            // Découpe la Data URL en parties de 24.9 Mo MAXIMUM
+            splitDataURL(dataUrl) {
+                const parts = [];
+                let currentPosition = 0;
+                const totalLength = dataUrl.length;
                 
-                // Déterminer le MIME type
-                const mimeType = currentFile.type || 'application/octet-stream';
-                
-                const totalSize = base64Data.length;
-                const chunksCountValue = Math.ceil(totalSize / CHUNK_MAX_SIZE);
-                
-                showMessage(`Découpage en ${chunksCountValue} parties...`, 'success');
-                
-                for (let i = 0; i < chunksCountValue; i++) {
-                    const start = i * CHUNK_MAX_SIZE;
-                    const end = Math.min(start + CHUNK_MAX_SIZE, totalSize);
-                    const chunkData = base64Data.slice(start, end);
-                    
-                    // Créer le contenu du chunk avec en-tête
-                    const chunkHeader = `data:${mimeType};base64,`;
-                    const fullChunk = chunkHeader + chunkData;
-                    
-                    chunks.push({
-                        index: i,
-                        data: fullChunk,
-                        size: fullChunk.length
-                    });
-                    
-                    // Mettre à jour la progression
-                    const progress = ((i + 1) / chunksCountValue) * 100;
-                    progressFill.style.width = `${progress}%`;
-                    progressText.textContent = `${Math.round(progress)}% (Partie ${i + 1}/${chunksCountValue})`;
-                    
-                    // Permettre au navigateur de respirer
-                    await new Promise(resolve => setTimeout(resolve, 5));
+                while (currentPosition < totalLength) {
+                    // Prend exactement TAILLE_MAX caractères ou moins pour la dernière partie
+                    const endPosition = Math.min(currentPosition + Math.floor(TAILLE_MAX), totalLength);
+                    const part = dataUrl.substring(currentPosition, endPosition);
+                    parts.push(part);
+                    currentPosition = endPosition;
                 }
                 
-                // Afficher la liste des chunks
-                displayChunksList();
-                
-                progressText.textContent = 'Terminé !';
-                showMessage(`Découpage terminé : ${chunks.length} parties créées`, 'success');
-                
-            } catch (error) {
-                console.error('Erreur lors du découpage:', error);
-                showMessage('Erreur lors du découpage du fichier: ' + error.message, 'error');
-            } finally {
-                processBtn.disabled = false;
+                return parts;
             }
-        });
 
-        // Afficher la liste des parties
-        function displayChunksList() {
-            chunksContainer.innerHTML = '';
-            
-            chunks.forEach((chunk, index) => {
-                const chunkElement = document.createElement('div');
-                chunkElement.className = 'chunk-item';
-                
-                const numberSpan = document.createElement('span');
-                numberSpan.className = 'chunk-number';
-                numberSpan.textContent = `${index + 1}`;
-                
-                const infoSpan = document.createElement('span');
-                infoSpan.style.flex = '1';
-                infoSpan.style.marginLeft = '15px';
-                infoSpan.innerHTML = `Partie <strong>${index + 1}</strong> / ${chunks.length}`;
-                
-                const sizeSpan = document.createElement('span');
-                sizeSpan.className = 'chunk-size';
-                sizeSpan.textContent = formatSize(chunk.size);
-                
-                const downloadBtn = document.createElement('button');
-                downloadBtn.className = 'button download-one';
-                downloadBtn.textContent = '⬇️ Télécharger';
-                downloadBtn.onclick = () => downloadChunk(index);
-                
-                chunkElement.appendChild(numberSpan);
-                chunkElement.appendChild(infoSpan);
-                chunkElement.appendChild(sizeSpan);
-                chunkElement.appendChild(downloadBtn);
-                
-                chunksContainer.appendChild(chunkElement);
-            });
-            
-            chunksList.style.display = 'block';
-        }
-
-        // Télécharger une partie spécifique avec un nom simple (numéro)
-        function downloadChunk(index) {
-            try {
-                const chunk = chunks[index];
-                const blob = dataURLToBlob(chunk.data);
-                
-                // Créer un URL temporaire
+            // Télécharge une partie avec un délai pour éviter de bloquer le navigateur
+            async downloadPart(content, index, total) {
+                const blob = new Blob([content], { type: 'text/plain' });
                 const url = URL.createObjectURL(blob);
-                
-                // Créer et configurer le lien de téléchargement
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `${index + 1}`; // Nom simple : 1, 2, 3, etc.
-                
-                // Technique plus robuste pour le téléchargement
-                document.body.appendChild(a);
+                a.download = `${index + 1}.txt`;
                 a.click();
                 
-                // Nettoyer
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }, 100);
-                
-            } catch (error) {
-                console.error('Erreur téléchargement:', error);
-                showMessage(`Erreur lors du téléchargement de la partie ${index + 1}`, 'error');
-            }
-        }
-
-        // Convertir Data URL en Blob
-        function dataURLToBlob(dataURL) {
-            try {
-                const parts = dataURL.split(',');
-                const mime = parts[0].match(/:(.*?);/)[1];
-                const bstr = atob(parts[1]);
-                let n = bstr.length;
-                const u8arr = new Uint8Array(n);
-                
-                while (n--) {
-                    u8arr[n] = bstr.charCodeAt(n);
-                }
-                
-                return new Blob([u8arr], { type: mime });
-            } catch (error) {
-                console.error('Erreur conversion DataURL -> Blob:', error);
-                throw error;
-            }
-        }
-
-        // Télécharger toutes les parties une par une avec délai
-        downloadAllSequentialBtn.addEventListener('click', async () => {
-            if (chunks.length === 0) return;
-            
-            downloadAllSequentialBtn.disabled = true;
-            const originalText = downloadAllSequentialBtn.textContent;
-            downloadAllSequentialBtn.innerHTML = '<span class="loading-spinner"></span>Téléchargement en cours...';
-            
-            try {
-                for (let i = 0; i < chunks.length; i++) {
-                    await new Promise(resolve => {
-                        setTimeout(() => {
-                            downloadChunk(i);
-                            resolve();
-                        }, i * 300); // Délai de 300ms entre chaque téléchargement
-                    });
-                }
-                showMessage(`${chunks.length} parties téléchargées`, 'success');
-            } catch (error) {
-                showMessage('Erreur lors du téléchargement séquentiel', 'error');
-            } finally {
-                downloadAllSequentialBtn.disabled = false;
-                downloadAllSequentialBtn.textContent = originalText;
-            }
-        });
-
-        // Télécharger toutes les parties en un seul fichier ZIP
-        downloadAllBtn.addEventListener('click', async () => {
-            if (chunks.length === 0) return;
-            
-            downloadAllBtn.disabled = true;
-            const originalText = downloadAllBtn.textContent;
-            downloadAllBtn.innerHTML = '<span class="loading-spinner"></span>Création du ZIP...';
-            
-            try {
-                const zip = new JSZip();
-                
-                // Ajouter chaque partie au ZIP
-                for (let i = 0; i < chunks.length; i++) {
-                    const chunk = chunks[i];
-                    const blob = dataURLToBlob(chunk.data);
-                    zip.file(`${i + 1}`, blob);
-                    
-                    // Mettre à jour la progression
-                    const progress = ((i + 1) / chunks.length) * 100;
-                    downloadAllBtn.innerHTML = `<span class="loading-spinner"></span>Compression: ${Math.round(progress)}%`;
-                }
-                
-                // Générer le ZIP
-                const content = await zip.generateAsync({ type: 'blob' });
-                
-                // Télécharger le ZIP
-                const url = URL.createObjectURL(content);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${originalFileName || 'fichier'}_parties.zip`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                // Cleanup et pause pour permettre au navigateur de respirer
                 URL.revokeObjectURL(url);
+                await new Promise(resolve => setTimeout(resolve, 50));
                 
-                showMessage('Archive ZIP téléchargée avec succès', 'success');
-            } catch (error) {
-                console.error('Erreur ZIP:', error);
-                showMessage('Erreur lors de la création du ZIP', 'error');
-            } finally {
-                downloadAllBtn.disabled = false;
-                downloadAllBtn.textContent = originalText;
+                this.progressText.textContent = `Téléchargement ${index + 1}/${total}`;
+                this.progressFill.style.width = `${((index + 1) / total) * 100}%`;
             }
-        });
 
-        // Version reconstruction (placeholder)
-        document.getElementById('reconstructionLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            showMessage('Version reconstruction - À implémenter', 'success');
-        });
+            async processFile() {
+                if (!this.file) {
+                    this.error.textContent = '❌ Veuillez sélectionner un fichier';
+                    return;
+                }
 
-        console.log('Application prête - Taille max par partie: 24.9 Mo');
+                this.processBtn.disabled = true;
+                this.progress.style.display = 'block';
+                this.stats.style.display = 'none';
+                this.error.textContent = '';
+
+                const startTime = performance.now();
+
+                try {
+                    // Étape 1: Conversion en Data URL
+                    this.progressText.textContent = 'Conversion en Data URL...';
+                    this.progressFill.style.width = '10%';
+                    
+                    const dataUrl = await this.fileToDataURL(this.file);
+                    
+                    // Étape 2: Découpage
+                    this.progressText.textContent = 'Découpage...';
+                    this.progressFill.style.width = '30%';
+                    
+                    const parts = this.splitDataURL(dataUrl);
+                    
+                    // Étape 3: Téléchargement des parties
+                    this.progressText.textContent = `Téléchargement de ${parts.length} parties...`;
+                    this.progressFill.style.width = '50%';
+                    
+                    // Téléchargement séquentiel pour éviter de saturer le navigateur
+                    for (let i = 0; i < parts.length; i++) {
+                        await this.downloadPart(parts[i], i, parts.length);
+                    }
+                    
+                    // Statistiques finales
+                    const endTime = performance.now();
+                    const duration = ((endTime - startTime) / 1000).toFixed(2);
+                    
+                    this.progressFill.style.width = '100%';
+                    this.progressText.textContent = '✅ Découpage terminé !';
+                    
+                    this.stats.style.display = 'block';
+                    this.stats.innerHTML = `
+                        <strong>📊 Statistiques :</strong><br>
+                        Fichier original : ${this.file.name}<br>
+                        Taille originale : ${this.formatSize(this.file.size)}<br>
+                        Nombre de parties : ${parts.length}<br>
+                        Taille Data URL : ${this.formatSize(dataUrl.length)}<br>
+                        Taille max par partie : 24.9 Mo<br>
+                        Temps total : ${duration} secondes
+                    `;
+                    
+                } catch (error) {
+                    this.error.textContent = `❌ Erreur : ${error.message}`;
+                    console.error(error);
+                } finally {
+                    this.processBtn.disabled = false;
+                }
+            }
+        }
+
+        // Initialisation
+        new FileCutter();
     </script>
 </body>
 </html>
