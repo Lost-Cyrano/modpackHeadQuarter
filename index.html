@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reconstructeur 24.9 Mo - Data URL</title>
+    <title>Reconstructeur GitHub - 24.9 Mo</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
             background: #f5f5f5;
@@ -22,84 +22,15 @@
             color: #333;
             margin-top: 0;
         }
-        .upload-area {
-            border: 2px dashed #ccc;
+        .info {
+            background: #E3F2FD;
+            padding: 15px;
             border-radius: 5px;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: border 0.3s;
             margin: 20px 0;
-        }
-        .upload-area:hover {
-            border-color: #666;
-        }
-        .upload-area.dragover {
-            border-color: #4CAF50;
-            background: #E8F5E9;
-        }
-        .file-list {
-            margin: 20px 0;
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #eee;
-            border-radius: 5px;
-        }
-        .file-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .file-item:last-child {
-            border-bottom: none;
-        }
-        .file-item.valid {
-            background: #F1F8E9;
-        }
-        .file-item.invalid {
-            background: #FFEBEE;
-        }
-        .badge {
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .badge-success {
-            background: #4CAF50;
-            color: white;
-        }
-        .badge-warning {
-            background: #FF9800;
-            color: white;
-        }
-        .badge-error {
-            background: #f44336;
-            color: white;
-        }
-        button {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        button.secondary {
-            background: #2196F3;
+            word-break: break-all;
         }
         .progress {
             margin-top: 20px;
-            display: none;
         }
         .progress-bar {
             width: 100%;
@@ -114,420 +45,359 @@
             width: 0%;
             transition: width 0.3s;
         }
-        .stats {
+        .stats, .error, .success {
             margin-top: 20px;
             padding: 15px;
-            background: #f9f9f9;
             border-radius: 5px;
+        }
+        .stats {
+            background: #f9f9f9;
         }
         .error {
+            background: #FFEBEE;
             color: #f44336;
-            margin-top: 10px;
         }
         .success {
+            background: #E8F5E9;
             color: #4CAF50;
-            font-weight: bold;
         }
-        .download-btn {
+        button {
             background: #2196F3;
-            margin-top: 20px;
-            display: none;
-        }
-        .info {
-            background: #E3F2FD;
-            padding: 15px;
+            color: white;
+            border: none;
+            padding: 12px 24px;
             border-radius: 5px;
-            margin: 20px 0;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
         }
-        .clear-btn {
-            background: #9e9e9e;
-            margin-left: 10px;
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .file-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            margin: 10px 0;
+            padding: 10px;
+        }
+        .file-item {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔄 Reconstructeur de fichiers 24.9 Mo</h1>
-        <p>Prenez les fichiers texte (1.txt, 2.txt, ...) générés par le découpeur et reconstituez le fichier original.</p>
+        <h1>🔄 Reconstructeur GitHub Auto</h1>
+        <p>Reconstitue automatiquement un fichier à partir des parties stockées sur GitHub.</p>
         
-        <div class="info">
-            <strong>📋 Instructions :</strong>
-            <ol style="margin: 10px 0 0 20px;">
-                <li>Sélectionnez tous les fichiers .txt (1.txt, 2.txt, ...) provenant du découpeur</li>
-                <li>Le site les triera automatiquement par numéro</li>
-                <li>Vérifiez qu'aucun fichier ne manque</li>
-                <li>Cliquez sur "Reconstruire le fichier original"</li>
-            </ol>
+        <div id="repoInfo" class="info">
+            🔗 Dépôt détecté : <span id="repoUrlDisplay">aucun</span>
         </div>
         
-        <div id="uploadArea" class="upload-area">
-            📂 Cliquez ou glissez-déposez vos fichiers texte ici
-            <br>
-            <small style="color: #666;">(vous pouvez sélectionner plusieurs fichiers à la fois)</small>
-        </div>
-        <input type="file" id="fileInput" style="display: none;" multiple accept=".txt">
+        <div id="status" style="min-height: 50px;"></div>
         
-        <div id="fileListContainer" style="display: none;">
-            <h3>📑 Fichiers chargés :</h3>
-            <div id="fileList" class="file-list"></div>
-            <p id="fileCount" style="margin: 10px 0;"></p>
-            <button id="clearBtn" class="clear-btn">🗑️ Tout effacer</button>
-        </div>
-        
-        <div id="progress" class="progress">
+        <div id="progress" class="progress" style="display: none;">
             <div class="progress-bar">
                 <div id="progressFill" class="progress-fill"></div>
             </div>
-            <p id="progressText">Préparation...</p>
+            <p id="progressText">Initialisation...</p>
         </div>
         
-        <div id="stats" class="stats" style="display: none;"></div>
-        <div id="error" class="error"></div>
+        <div id="fileListContainer" style="display: none;">
+            <h4>📄 Fichiers trouvés :</h4>
+            <div id="fileList" class="file-list"></div>
+        </div>
         
-        <button id="reconstructBtn" class="secondary" disabled>🔄 Reconstruire le fichier original</button>
+        <div id="result"></div>
+        
+        <button id="startBtn" style="display: none;">🚀 Lancer la reconstruction</button>
         <a id="downloadLink" style="display: none;"></a>
-        <button id="downloadBtn" class="download-btn" style="display: none;">📥 Télécharger le fichier reconstitué</button>
+        <button id="downloadBtn" style="display: none;">📥 Télécharger le fichier reconstitué</button>
     </div>
 
     <script>
-        class FileReconstructor {
+        class GitHubReconstructor {
             constructor() {
-                this.files = new Map(); // Map numéro -> {file, content}
-                this.expectedCount = 0;
+                this.apiBase = 'https://api.github.com';
+                this.repoInfo = null;
+                this.txtFiles = [];
+                this.fileContents = new Map();
                 this.reconstructedDataUrl = null;
                 this.originalFileName = null;
+                
                 this.init();
             }
 
             init() {
-                this.uploadArea = document.getElementById('uploadArea');
-                this.fileInput = document.getElementById('fileInput');
-                this.fileListContainer = document.getElementById('fileListContainer');
-                this.fileList = document.getElementById('fileList');
-                this.fileCount = document.getElementById('fileCount');
-                this.reconstructBtn = document.getElementById('reconstructBtn');
-                this.downloadBtn = document.getElementById('downloadBtn');
-                this.progress = document.getElementById('progress');
-                this.progressFill = document.getElementById('progressFill');
-                this.progressText = document.getElementById('progressText');
-                this.stats = document.getElementById('stats');
-                this.error = document.getElementById('error');
-                this.clearBtn = document.getElementById('clearBtn');
-
-                this.bindEvents();
-            }
-
-            bindEvents() {
-                // Upload area clicks
-                this.uploadArea.addEventListener('click', () => this.fileInput.click());
+                // Analyser l'URL pour trouver le paramètre ?r=
+                const urlParams = new URLSearchParams(window.location.search);
+                const repoUrl = urlParams.get('r');
                 
-                // Drag & drop
-                this.uploadArea.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    this.uploadArea.classList.add('dragover');
-                });
-                
-                this.uploadArea.addEventListener('dragleave', () => {
-                    this.uploadArea.classList.remove('dragover');
-                });
-                
-                this.uploadArea.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    this.uploadArea.classList.remove('dragover');
-                    const files = Array.from(e.dataTransfer.files);
-                    if (files.length > 0) this.handleFiles(files);
-                });
-                
-                // File input change
-                this.fileInput.addEventListener('change', (e) => {
-                    if (e.target.files.length > 0) {
-                        this.handleFiles(Array.from(e.target.files));
-                    }
-                });
-                
-                // Reconstruct button
-                this.reconstructBtn.addEventListener('click', () => this.reconstructFile());
-                
-                // Download button
-                this.downloadBtn.addEventListener('click', () => this.downloadReconstructedFile());
-                
-                // Clear button
-                this.clearBtn.addEventListener('click', () => this.clearAll());
-            }
-
-            clearAll() {
-                this.files.clear();
-                this.expectedCount = 0;
-                this.reconstructedDataUrl = null;
-                this.originalFileName = null;
-                this.fileList.innerHTML = '';
-                this.fileListContainer.style.display = 'none';
-                this.reconstructBtn.disabled = true;
-                this.downloadBtn.style.display = 'none';
-                this.stats.style.display = 'none';
-                this.progress.style.display = 'none';
-                this.error.textContent = '';
-                this.uploadArea.textContent = '📂 Cliquez ou glissez-déposez vos fichiers texte ici\n\n(plusieurs fichiers à la fois)';
-                this.fileInput.value = '';
-            }
-
-            async handleFiles(files) {
-                // Filtrer uniquement les .txt
-                const txtFiles = files.filter(f => f.name.toLowerCase().endsWith('.txt'));
-                
-                if (txtFiles.length === 0) {
-                    this.error.textContent = '❌ Veuillez sélectionner des fichiers .txt';
-                    return;
+                if (repoUrl) {
+                    document.getElementById('repoUrlDisplay').textContent = repoUrl;
+                    this.parseGitHubUrl(repoUrl);
+                } else {
+                    document.getElementById('status').innerHTML = `
+                        <div class="error">
+                            ⚠️ Aucun dépôt spécifié. Ajoutez ?r=URL_DU_DEPOT à l'URL.
+                            <br><br>
+                            Exemple : ?r=https://github.com/utilisateur/depot/tree/main/dossier
+                        </div>
+                    `;
                 }
-
-                this.error.textContent = '';
-                this.uploadArea.textContent = `📂 ${txtFiles.length} fichier(s) sélectionné(s)`;
-
-                // Traiter chaque fichier
-                for (const file of txtFiles) {
-                    await this.processFile(file);
-                }
-
-                this.displayFileList();
-                this.checkCompleteness();
             }
 
-            async processFile(file) {
-                // Extraire le numéro du nom de fichier (1.txt, 2.txt, etc.)
-                const match = file.name.match(/^(\d+)\.txt$/);
+            parseGitHubUrl(url) {
+                // Format: https://github.com/user/repo/tree/branch/path
+                const regex = /github\.com\/([^\/]+)\/([^\/]+)\/tree\/([^\/]+)\/?(.*)/;
+                const match = url.match(regex);
+                
                 if (!match) {
-                    this.error.textContent += `⚠️ Fichier ignoré (nom invalide) : ${file.name}\n`;
+                    this.showError('Format d\'URL GitHub invalide');
                     return;
                 }
+                
+                this.repoInfo = {
+                    owner: match[1],
+                    repo: match[2],
+                    branch: match[3],
+                    path: match[4] || ''
+                };
+                
+                document.getElementById('startBtn').style.display = 'inline-block';
+                document.getElementById('startBtn').onclick = () => this.fetchFiles();
+                
+                this.showStatus(`✅ Dépôt valide : ${this.repoInfo.owner}/${this.repoInfo.repo}`, 'success');
+            }
 
-                const fileNumber = parseInt(match[1], 10);
+            async fetchFiles() {
+                this.showProgress(true);
+                this.updateProgress(10, 'Recherche des fichiers texte...');
                 
                 try {
-                    // Lire le contenu du fichier
-                    const content = await this.readFileContent(file);
+                    // Récupérer la liste des fichiers du dossier
+                    const contents = await this.fetchRepoContents();
                     
-                    // Stocker le fichier
-                    this.files.set(fileNumber, {
-                        file: file,
-                        content: content,
-                        number: fileNumber,
-                        size: content.length
-                    });
+                    // Filtrer les fichiers .txt qui suivent le format nombre.txt
+                    this.txtFiles = contents
+                        .filter(item => item.type === 'file')
+                        .filter(item => item.name.match(/^\d+\.txt$/))
+                        .sort((a, b) => {
+                            const numA = parseInt(a.name.match(/^\d+/)[0]);
+                            const numB = parseInt(b.name.match(/^\d+/)[0]);
+                            return numA - numB;
+                        });
                     
-                    this.expectedCount = Math.max(this.expectedCount, fileNumber);
+                    if (this.txtFiles.length === 0) {
+                        throw new Error('Aucun fichier .txt valide trouvé dans le dépôt');
+                    }
+                    
+                    this.displayFileList();
+                    
+                    this.updateProgress(30, `${this.txtFiles.length} fichiers trouvés, téléchargement...`);
+                    
+                    // Télécharger tous les fichiers
+                    await this.downloadAllFiles();
+                    
+                    this.updateProgress(80, 'Reconstruction du fichier...');
+                    
+                    // Reconstruire le fichier
+                    await this.reconstructFile();
+                    
                 } catch (error) {
-                    this.error.textContent += `❌ Erreur lecture ${file.name}: ${error.message}\n`;
+                    this.showError(`Erreur : ${error.message}`);
+                    console.error(error);
+                } finally {
+                    this.showProgress(false);
                 }
             }
 
-            readFileContent(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.onerror = (e) => reject(new Error('Erreur de lecture'));
-                    reader.readAsText(file);
-                });
-            }
-
-            displayFileList() {
-                this.fileListContainer.style.display = 'block';
-                this.fileList.innerHTML = '';
+            async fetchRepoContents() {
+                const { owner, repo, branch, path } = this.repoInfo;
+                const url = `${this.apiBase}/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
                 
-                // Trier par numéro
-                const sortedFiles = Array.from(this.files.entries())
-                    .sort((a, b) => a[0] - b[0]);
-                
-                let lastNum = 0;
-                for (const [num, data] of sortedFiles) {
-                    const div = document.createElement('div');
-                    div.className = 'file-item';
+                try {
+                    const response = await fetch(url);
                     
-                    // Vérifier s'il manque des numéros avant celui-ci
-                    if (num > lastNum + 1) {
-                        for (let i = lastNum + 1; i < num; i++) {
-                            const missingDiv = document.createElement('div');
-                            missingDiv.className = 'file-item invalid';
-                            missingDiv.innerHTML = `
-                                <span style="color: #f44336;">
-                                    ⚠️ Fichier ${i}.txt manquant
-                                </span>
-                                <span class="badge badge-error">Manquant</span>
-                            `;
-                            this.fileList.appendChild(missingDiv);
+                    if (!response.ok) {
+                        if (response.status === 403) {
+                            throw new Error('Limite d\'API GitHub atteinte. Attendez quelques minutes.');
                         }
+                        throw new Error(`Erreur GitHub: ${response.status}`);
                     }
                     
-                    // Afficher le fichier présent
-                    div.innerHTML = `
-                        <span>
-                            📄 ${num}.txt 
-                            <small style="color: #666;">(${this.formatSize(data.size)} caractères)</small>
-                        </span>
-                        <span class="badge badge-success">Présent</span>
-                    `;
-                    this.fileList.appendChild(div);
-                    
-                    lastNum = num;
+                    return await response.json();
+                } catch (error) {
+                    throw new Error(`Impossible d'accéder au dépôt: ${error.message}`);
                 }
-                
-                // Vérifier les fichiers manquants après le dernier
-                if (this.expectedCount > lastNum) {
-                    for (let i = lastNum + 1; i <= this.expectedCount; i++) {
-                        const missingDiv = document.createElement('div');
-                        missingDiv.className = 'file-item invalid';
-                        missingDiv.innerHTML = `
-                            <span style="color: #f44336;">
-                                ⚠️ Fichier ${i}.txt manquant
-                            </span>
-                            <span class="badge badge-error">Manquant</span>
-                        `;
-                        this.fileList.appendChild(missingDiv);
-                    }
-                }
-                
-                this.fileCount.textContent = `📊 ${this.files.size} fichier(s) présent(s) sur ${this.expectedCount || '?'} attendu(s)`;
             }
 
-            checkCompleteness() {
+            async downloadAllFiles() {
+                for (let i = 0; i < this.txtFiles.length; i++) {
+                    const file = this.txtFiles[i];
+                    
+                    this.updateProgress(
+                        30 + Math.floor((i / this.txtFiles.length) * 50),
+                        `Téléchargement ${file.name} (${i + 1}/${this.txtFiles.length})`
+                    );
+                    
+                    try {
+                        const content = await this.downloadFile(file.download_url);
+                        const fileNumber = parseInt(file.name.match(/^\d+/)[0]);
+                        this.fileContents.set(fileNumber, content);
+                        
+                        // Pause pour éviter de rate-limiter l'API
+                        if (i % 5 === 4) await new Promise(r => setTimeout(r, 100));
+                        
+                    } catch (error) {
+                        throw new Error(`Erreur téléchargement ${file.name}: ${error.message}`);
+                    }
+                }
+            }
+
+            async downloadFile(url) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error('Erreur téléchargement');
+                    return await response.text();
+                } catch {
+                    // Fallback sur l'API GitHub si le raw échoue
+                    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                    const response = await fetch(proxyUrl);
+                    if (!response.ok) throw new Error('Erreur proxy');
+                    return await response.text();
+                }
+            }
+
+            async reconstructFile() {
+                // Vérifier la continuité des numéros
+                const maxNum = Math.max(...this.fileContents.keys());
                 let complete = true;
                 let missing = [];
                 
-                // Vérifier que tous les fichiers de 1 à expectedCount sont présents
-                for (let i = 1; i <= this.expectedCount; i++) {
-                    if (!this.files.has(i)) {
+                for (let i = 1; i <= maxNum; i++) {
+                    if (!this.fileContents.has(i)) {
                         complete = false;
                         missing.push(i);
                     }
                 }
                 
-                if (complete && this.expectedCount > 0) {
-                    this.reconstructBtn.disabled = false;
-                    this.error.textContent = '✅ Tous les fichiers sont présents ! Vous pouvez reconstruire.';
-                } else {
-                    this.reconstructBtn.disabled = true;
-                    if (missing.length > 0) {
-                        this.error.textContent = `❌ Fichiers manquants : ${missing.join(', ')}.txt`;
-                    }
+                if (!complete) {
+                    throw new Error(`Fichiers manquants: ${missing.join(', ')}.txt`);
                 }
+                
+                // Concaténer dans l'ordre
+                let fullDataUrl = '';
+                for (let i = 1; i <= maxNum; i++) {
+                    fullDataUrl += this.fileContents.get(i);
+                    
+                    // Pause toutes les 10 parties pour fichiers volumineux
+                    if (i % 10 === 0) await new Promise(r => setTimeout(r, 10));
+                }
+                
+                // Valider la Data URL
+                if (!fullDataUrl.startsWith('data:')) {
+                    throw new Error('Format Data URL invalide');
+                }
+                
+                this.reconstructedDataUrl = fullDataUrl;
+                
+                // Extraire le nom du fichier
+                try {
+                    const mimeMatch = fullDataUrl.match(/data:([^;]+);/);
+                    if (mimeMatch) {
+                        const mime = mimeMatch[1];
+                        const ext = mime.split('/')[1] || 'bin';
+                        this.originalFileName = `reconstruit_github.${ext}`;
+                    }
+                } catch {
+                    this.originalFileName = 'reconstruit_github.bin';
+                }
+                
+                this.updateProgress(100, '✅ Reconstruction terminée !');
+                
+                // Afficher le résultat
+                this.showResult();
+            }
+
+            displayFileList() {
+                const container = document.getElementById('fileListContainer');
+                const fileList = document.getElementById('fileList');
+                
+                fileList.innerHTML = '';
+                this.txtFiles.forEach(file => {
+                    const div = document.createElement('div');
+                    div.className = 'file-item';
+                    div.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(2)} Ko)`;
+                    fileList.appendChild(div);
+                });
+                
+                container.style.display = 'block';
+            }
+
+            showResult() {
+                const resultDiv = document.getElementById('result');
+                const downloadBtn = document.getElementById('downloadBtn');
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <strong>✅ Reconstruction réussie !</strong><br>
+                        Fichier: ${this.originalFileName}<br>
+                        Taille: ${this.formatSize(this.reconstructedDataUrl.length)}<br>
+                        Parties: ${this.fileContents.size}
+                    </div>
+                `;
+                
+                downloadBtn.style.display = 'inline-block';
+                downloadBtn.onclick = () => this.downloadFile();
+            }
+
+            downloadFile() {
+                if (!this.reconstructedDataUrl) return;
+                
+                const link = document.createElement('a');
+                link.href = this.reconstructedDataUrl;
+                link.download = this.originalFileName;
+                link.click();
+                
+                this.showStatus('✅ Fichier téléchargé avec succès !', 'success');
+            }
+
+            updateProgress(percent, text) {
+                document.getElementById('progressFill').style.width = percent + '%';
+                document.getElementById('progressText').textContent = text;
+            }
+
+            showProgress(show) {
+                document.getElementById('progress').style.display = show ? 'block' : 'none';
+            }
+
+            showStatus(message, type = 'info') {
+                const statusDiv = document.getElementById('status');
+                statusDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            }
+
+            showError(message) {
+                document.getElementById('status').innerHTML = `<div class="error">❌ ${message}</div>`;
             }
 
             formatSize(bytes) {
                 if (bytes === 0) return '0';
                 const k = 1024;
-                const sizes = ['', 'K', 'M', 'G'];
+                const sizes = ['o', 'Ko', 'Mo', 'Go'];
                 const i = Math.floor(Math.log(bytes) / Math.log(k));
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
-
-            async reconstructFile() {
-                if (this.files.size === 0) return;
-                
-                this.reconstructBtn.disabled = true;
-                this.progress.style.display = 'block';
-                this.stats.style.display = 'none';
-                this.error.textContent = '';
-                
-                const startTime = performance.now();
-                
-                try {
-                    // Trier les fichiers par numéro
-                    const sortedFiles = Array.from(this.files.entries())
-                        .sort((a, b) => a[0] - b[0]);
-                    
-                    // Concaténer tout le contenu
-                    this.progressText.textContent = 'Concaténation des parties...';
-                    this.progressFill.style.width = '30%';
-                    
-                    let fullDataUrl = '';
-                    for (let i = 0; i < sortedFiles.length; i++) {
-                        const [num, data] = sortedFiles[i];
-                        fullDataUrl += data.content;
-                        
-                        // Mise à jour de la progression
-                        this.progressFill.style.width = `${30 + ((i + 1) / sortedFiles.length) * 40}%`;
-                        this.progressText.textContent = `Concaténation : ${i + 1}/${sortedFiles.length}`;
-                        
-                        // Laisser le navigateur respirer toutes les 10 parties
-                        if (i % 10 === 0) {
-                            await new Promise(resolve => setTimeout(resolve, 10));
-                        }
-                    }
-                    
-                    // Vérification rapide que c'est une Data URL valide
-                    this.progressText.textContent = 'Validation de la Data URL...';
-                    this.progressFill.style.width = '80%';
-                    
-                    if (!fullDataUrl.startsWith('data:')) {
-                        throw new Error('Le fichier reconstitué ne commence pas par "data:" - fichier corrompu ?');
-                    }
-                    
-                    this.reconstructedDataUrl = fullDataUrl;
-                    
-                    // Essayer d'extraire le nom original du fichier
-                    try {
-                        const mimeMatch = fullDataUrl.match(/data:([^;]+);/);
-                        if (mimeMatch) {
-                            const mime = mimeMatch[1];
-                            const ext = mime.split('/')[1] || 'bin';
-                            this.originalFileName = `fichier_reconstitue.${ext}`;
-                        } else {
-                            this.originalFileName = 'fichier_reconstitue.bin';
-                        }
-                    } catch {
-                        this.originalFileName = 'fichier_reconstitue.bin';
-                    }
-                    
-                    // Statistiques
-                    const endTime = performance.now();
-                    const duration = ((endTime - startTime) / 1000).toFixed(2);
-                    
-                    this.progressFill.style.width = '100%';
-                    this.progressText.textContent = '✅ Reconstruction terminée !';
-                    
-                    // Afficher les stats
-                    this.stats.style.display = 'block';
-                    this.stats.innerHTML = `
-                        <strong>📊 Statistiques de reconstruction :</strong><br>
-                        Nombre de parties : ${sortedFiles.length}<br>
-                        Taille totale reconstituée : ${this.formatSize(fullDataUrl.length)} caractères<br>
-                        Type détecté : ${this.originalFileName || 'Inconnu'}<br>
-                        Temps de reconstruction : ${duration} secondes<br>
-                        <span class="success">✅ Prêt à télécharger !</span>
-                    `;
-                    
-                    // Afficher le bouton de téléchargement
-                    this.downloadBtn.style.display = 'inline-block';
-                    
-                } catch (error) {
-                    this.error.textContent = `❌ Erreur de reconstruction : ${error.message}`;
-                    console.error(error);
-                    this.downloadBtn.style.display = 'none';
-                } finally {
-                    this.reconstructBtn.disabled = false;
-                }
-            }
-
-            downloadReconstructedFile() {
-                if (!this.reconstructedDataUrl) return;
-                
-                try {
-                    // Créer un lien de téléchargement
-                    const link = document.createElement('a');
-                    link.href = this.reconstructedDataUrl;
-                    link.download = this.originalFileName || 'fichier_reconstitue.bin';
-                    link.click();
-                    
-                    this.error.textContent = '✅ Fichier téléchargé avec succès !';
-                    this.error.className = 'success';
-                } catch (error) {
-                    this.error.textContent = `❌ Erreur de téléchargement : ${error.message}`;
-                    this.error.className = 'error';
-                }
-            }
         }
 
-        // Initialisation
-        new FileReconstructor();
+        // Lancer l'application
+        new GitHubReconstructor();
     </script>
 </body>
 </html>
