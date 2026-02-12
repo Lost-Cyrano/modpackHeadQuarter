@@ -3,796 +3,531 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Réassemblage de fichiers - Reconstruction</title>
+    <title>Reconstructeur 24.9 Mo - Data URL</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
         body {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 800px;
             margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 30px;
+            padding: 20px;
+            background: #f5f5f5;
         }
-        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
         h1 {
             color: #333;
-            margin-bottom: 20px;
-            text-align: center;
-            font-size: 2em;
+            margin-top: 0;
         }
-        
-        h2 {
-            color: #555;
-            margin: 20px 0 10px;
-            font-size: 1.5em;
-        }
-        
         .upload-area {
-            border: 3px dashed #28a745;
-            border-radius: 15px;
-            padding: 40px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            padding: 30px;
             text-align: center;
-            background: #f8f9fa;
             cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 20px;
+            transition: border 0.3s;
+            margin: 20px 0;
         }
-        
         .upload-area:hover {
-            background: #e9ecef;
-            border-color: #20c997;
+            border-color: #666;
         }
-        
-        .upload-area.active {
-            border-color: #28a745;
-            background: #d4edda;
+        .upload-area.dragover {
+            border-color: #4CAF50;
+            background: #E8F5E9;
         }
-        
-        .files-list {
-            background: #f1f3f5;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
+        .file-list {
+            margin: 20px 0;
             max-height: 300px;
             overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 5px;
         }
-        
         .file-item {
             padding: 10px;
-            border-bottom: 1px solid #dee2e6;
+            border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        
         .file-item:last-child {
             border-bottom: none;
         }
-        
-        .file-number {
-            font-weight: bold;
-            color: #28a745;
-            background: white;
-            padding: 3px 10px;
-            border-radius: 15px;
-            font-size: 0.9em;
-            border: 1px solid #28a745;
+        .file-item.valid {
+            background: #F1F8E9;
         }
-        
-        .file-name {
-            flex: 1;
-            margin-left: 15px;
-            color: #495057;
+        .file-item.invalid {
+            background: #FFEBEE;
         }
-        
-        .file-size {
-            color: #6c757d;
-            margin-right: 15px;
-        }
-        
-        .file-status {
-            padding: 3px 10px;
-            border-radius: 15px;
-            font-size: 0.8em;
+        .badge {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
             font-weight: bold;
         }
-        
-        .status-ok {
-            background: #d4edda;
-            color: #155724;
+        .badge-success {
+            background: #4CAF50;
+            color: white;
         }
-        
-        .status-waiting {
-            background: #fff3cd;
-            color: #856404;
+        .badge-warning {
+            background: #FF9800;
+            color: white;
         }
-        
-        .progress-container {
-            margin: 20px 0;
-            display: none;
+        .badge-error {
+            background: #f44336;
+            color: white;
         }
-        
-        .progress-bar {
-            width: 100%;
-            height: 30px;
-            background: #f1f3f5;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 10px;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #28a745, #20c997);
-            width: 0%;
-            transition: width 0.3s;
-            border-radius: 15px;
-        }
-        
-        .progress-text {
-            text-align: center;
-            font-weight: bold;
-            color: #555;
-        }
-        
-        .button {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        button {
+            background: #4CAF50;
             color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 16px;
+            padding: 12px 24px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: transform 0.2s;
-            border: none;
-            outline: none;
+            font-size: 16px;
+            font-weight: bold;
             margin-top: 10px;
         }
-        
-        .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
-        
-        .button:disabled {
-            opacity: 0.5;
+        button:disabled {
+            background: #ccc;
             cursor: not-allowed;
-            transform: none;
         }
-        
-        .button.secondary {
-            background: linear-gradient(135deg, #6c757d, #495057);
+        button.secondary {
+            background: #2196F3;
         }
-        
-        .download-section {
-            text-align: center;
-            padding: 30px;
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            border-radius: 15px;
+        .progress {
             margin-top: 20px;
             display: none;
         }
-        
-        .download-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-        }
-        
-        .file-info-reconstructed {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            text-align: left;
-        }
-        
-        .alert {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        
-        .alert.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-            display: block;
-        }
-        
-        .alert.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-            display: block;
-        }
-        
-        .alert.warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
-            display: block;
-        }
-        
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
+        .progress-bar {
+            width: 100%;
             height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #28a745;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-            vertical-align: middle;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-            padding: 20px;
-            background: white;
+            background: #f0f0f0;
             border-radius: 10px;
+            overflow: hidden;
         }
-        
-        .stat-item {
-            text-align: center;
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.3s;
         }
-        
-        .stat-value {
-            font-size: 2em;
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .error {
+            color: #f44336;
+            margin-top: 10px;
+        }
+        .success {
+            color: #4CAF50;
             font-weight: bold;
-            color: #28a745;
         }
-        
-        .stat-label {
-            color: #6c757d;
-            font-size: 0.9em;
-        }
-        
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-            color: #6c757d;
-            font-size: 0.9em;
-        }
-        
-        input[type="file"] {
+        .download-btn {
+            background: #2196F3;
+            margin-top: 20px;
             display: none;
         }
-        
+        .info {
+            background: #E3F2FD;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
         .clear-btn {
-            background: #dc3545;
+            background: #9e9e9e;
             margin-left: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔗 Réassemblage de fichiers</h1>
-        <h2>Version 1.0 - Reconstruction</h2>
+        <h1>🔄 Reconstructeur de fichiers 24.9 Mo</h1>
+        <p>Prenez les fichiers texte (1.txt, 2.txt, ...) générés par le découpeur et reconstituez le fichier original.</p>
         
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-content">
-                <div style="font-size: 48px; margin-bottom: 10px;">🔨</div>
-                <h3>Déposez toutes les parties du fichier ici</h3>
-                <p style="color: #6c757d; margin-top: 10px;">Les fichiers doivent être nommés "1", "2", "3"... dans l'ordre</p>
-                <p style="color: #28a745; font-weight: bold; margin-top: 5px;">Sélectionnez plusieurs fichiers à la fois (Ctrl+clic)</p>
-            </div>
+        <div class="info">
+            <strong>📋 Instructions :</strong>
+            <ol style="margin: 10px 0 0 20px;">
+                <li>Sélectionnez tous les fichiers .txt (1.txt, 2.txt, ...) provenant du découpeur</li>
+                <li>Le site les triera automatiquement par numéro</li>
+                <li>Vérifiez qu'aucun fichier ne manque</li>
+                <li>Cliquez sur "Reconstruire le fichier original"</li>
+            </ol>
         </div>
         
-        <input type="file" id="fileInput" multiple webkitdirectory directory>
+        <div id="uploadArea" class="upload-area">
+            📂 Cliquez ou glissez-déposez vos fichiers texte ici
+            <br>
+            <small style="color: #666;">(vous pouvez sélectionner plusieurs fichiers à la fois)</small>
+        </div>
+        <input type="file" id="fileInput" style="display: none;" multiple accept=".txt">
         
-        <div id="filesInfo" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3>📋 Parties détectées</h3>
-                <button id="clearAllBtn" class="button secondary" style="padding: 8px 20px;">🗑️ Tout effacer</button>
-            </div>
-            <div id="filesList" class="files-list"></div>
-            
-            <div class="stats" id="statsContainer">
-                <div class="stat-item">
-                    <div class="stat-value" id="totalFilesCount">0</div>
-                    <div class="stat-label">Fichiers reçus</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="totalSize">0 Mo</div>
-                    <div class="stat-label">Taille totale</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="missingFilesCount">0</div>
-                    <div class="stat-label">Fichiers manquants</div>
-                </div>
-            </div>
+        <div id="fileListContainer" style="display: none;">
+            <h3>📑 Fichiers chargés :</h3>
+            <div id="fileList" class="file-list"></div>
+            <p id="fileCount" style="margin: 10px 0;"></p>
+            <button id="clearBtn" class="clear-btn">🗑️ Tout effacer</button>
         </div>
         
-        <div id="progressContainer" class="progress-container">
+        <div id="progress" class="progress">
             <div class="progress-bar">
                 <div id="progressFill" class="progress-fill"></div>
             </div>
-            <div id="progressText" class="progress-text">0%</div>
+            <p id="progressText">Préparation...</p>
         </div>
         
-        <div id="alertMessage" class="alert"></div>
+        <div id="stats" class="stats" style="display: none;"></div>
+        <div id="error" class="error"></div>
         
-        <button id="assembleBtn" class="button" style="width: 100%;" disabled>🔨 Réassembler le fichier</button>
-        
-        <div id="downloadSection" class="download-section">
-            <div class="download-icon">🎉</div>
-            <h3>Fichier reconstruit avec succès !</h3>
-            
-            <div id="reconstructedFileInfo" class="file-info-reconstructed">
-                <p><strong>Nom original :</strong> <span id="originalFileName">fichier_reconstruit</span></p>
-                <p><strong>Taille :</strong> <span id="reconstructedFileSize">0 Mo</span></p>
-                <p><strong>Type :</strong> <span id="reconstructedFileType">Inconnu</span></p>
-                <p><strong>Parties assemblées :</strong> <span id="assembledPartsCount">0</span></p>
-            </div>
-            
-            <button id="downloadBtn" class="button" style="font-size: 1.2em; padding: 15px 50px;">
-                ⬇️ TÉLÉCHARGER LE FICHIER
-            </button>
-            
-            <button id="resetBtn" class="button secondary" style="margin-top: 15px;">
-                🔄 Réassembler un autre fichier
-            </button>
-        </div>
-        
-        <div class="footer">
-            <p>Déposez toutes les parties numérotées pour reconstruire le fichier original</p>
-            <p style="margin-top: 10px;">✂️ <a href="#" id="decoupageLink" style="color: #28a745; text-decoration: none;">Version découpage</a> pour diviser un fichier</p>
-        </div>
+        <button id="reconstructBtn" class="secondary" disabled>🔄 Reconstruire le fichier original</button>
+        <a id="downloadLink" style="display: none;"></a>
+        <button id="downloadBtn" class="download-btn" style="display: none;">📥 Télécharger le fichier reconstitué</button>
     </div>
 
     <script>
-        // Stockage des fichiers téléversés
-        let uploadedFiles = new Map(); // Map avec le numéro comme clé et le fichier comme valeur
-        let maxFileNumber = 0;
-        let reconstructedBlob = null;
-        let originalFileName = null;
-        let reconstructedMimeType = null;
-
-        // Éléments DOM
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const filesInfo = document.getElementById('filesInfo');
-        const filesList = document.getElementById('filesList');
-        const totalFilesCount = document.getElementById('totalFilesCount');
-        const totalSize = document.getElementById('totalSize');
-        const missingFilesCount = document.getElementById('missingFilesCount');
-        const progressContainer = document.getElementById('progressContainer');
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
-        const assembleBtn = document.getElementById('assembleBtn');
-        const downloadSection = document.getElementById('downloadSection');
-        const originalFileNameSpan = document.getElementById('originalFileName');
-        const reconstructedFileSize = document.getElementById('reconstructedFileSize');
-        const reconstructedFileType = document.getElementById('reconstructedFileType');
-        const assembledPartsCount = document.getElementById('assembledPartsCount');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const clearAllBtn = document.getElementById('clearAllBtn');
-        const alertMessage = document.getElementById('alertMessage');
-
-        // Événements de l'upload area
-        uploadArea.addEventListener('click', () => fileInput.click());
-        
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('active');
-        });
-        
-        uploadArea.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('active');
-        });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('active');
-            const items = e.dataTransfer.items;
-            if (items) {
-                for (let i = 0; i < items.length; i++) {
-                    const item = items[i].webkitGetAsEntry();
-                    if (item) {
-                        traverseFileTree(item);
-                    }
-                }
-            } else {
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    handleFiles(files);
-                }
+        class FileReconstructor {
+            constructor() {
+                this.files = new Map(); // Map numéro -> {file, content}
+                this.expectedCount = 0;
+                this.reconstructedDataUrl = null;
+                this.originalFileName = null;
+                this.init();
             }
-        });
 
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleFiles(e.target.files);
+            init() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.fileInput = document.getElementById('fileInput');
+                this.fileListContainer = document.getElementById('fileListContainer');
+                this.fileList = document.getElementById('fileList');
+                this.fileCount = document.getElementById('fileCount');
+                this.reconstructBtn = document.getElementById('reconstructBtn');
+                this.downloadBtn = document.getElementById('downloadBtn');
+                this.progress = document.getElementById('progress');
+                this.progressFill = document.getElementById('progressFill');
+                this.progressText = document.getElementById('progressText');
+                this.stats = document.getElementById('stats');
+                this.error = document.getElementById('error');
+                this.clearBtn = document.getElementById('clearBtn');
+
+                this.bindEvents();
             }
-        });
 
-        // Parcourir l'arborescence des fichiers (pour les dossiers)
-        function traverseFileTree(item, path = '') {
-            if (item.isFile) {
-                item.file((file) => {
-                    handleFiles([file]);
+            bindEvents() {
+                // Upload area clicks
+                this.uploadArea.addEventListener('click', () => this.fileInput.click());
+                
+                // Drag & drop
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
                 });
-            } else if (item.isDirectory) {
-                const dirReader = item.createReader();
-                dirReader.readEntries((entries) => {
-                    for (const entry of entries) {
-                        traverseFileTree(entry, path + item.name + '/');
+                
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('dragover');
+                });
+                
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    const files = Array.from(e.dataTransfer.files);
+                    if (files.length > 0) this.handleFiles(files);
+                });
+                
+                // File input change
+                this.fileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        this.handleFiles(Array.from(e.target.files));
                     }
                 });
-            }
-        }
-
-        // Fonction pour formater la taille
-        function formatSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        // Afficher un message
-        function showMessage(message, type = 'success') {
-            alertMessage.className = `alert ${type}`;
-            alertMessage.textContent = message;
-            setTimeout(() => {
-                alertMessage.style.display = 'none';
-            }, 5000);
-        }
-
-        // Extraire le numéro du nom de fichier
-        function extractFileNumber(filename) {
-            // Enlève l'extension .partX ou juste le numéro
-            const match = filename.match(/^(\d+)(?:\.part\d+)?$/);
-            if (match) {
-                return parseInt(match[1], 10);
-            }
-            return null;
-        }
-
-        // Gérer les fichiers sélectionnés
-        function handleFiles(files) {
-            let newFilesAdded = false;
-            
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const fileNumber = extractFileNumber(file.name);
                 
-                if (fileNumber !== null) {
-                    if (!uploadedFiles.has(fileNumber) || uploadedFiles.get(fileNumber).size < file.size) {
-                        uploadedFiles.set(fileNumber, file);
-                        maxFileNumber = Math.max(maxFileNumber, fileNumber);
-                        newFilesAdded = true;
-                    }
+                // Reconstruct button
+                this.reconstructBtn.addEventListener('click', () => this.reconstructFile());
+                
+                // Download button
+                this.downloadBtn.addEventListener('click', () => this.downloadReconstructedFile());
+                
+                // Clear button
+                this.clearBtn.addEventListener('click', () => this.clearAll());
+            }
+
+            clearAll() {
+                this.files.clear();
+                this.expectedCount = 0;
+                this.reconstructedDataUrl = null;
+                this.originalFileName = null;
+                this.fileList.innerHTML = '';
+                this.fileListContainer.style.display = 'none';
+                this.reconstructBtn.disabled = true;
+                this.downloadBtn.style.display = 'none';
+                this.stats.style.display = 'none';
+                this.progress.style.display = 'none';
+                this.error.textContent = '';
+                this.uploadArea.textContent = '📂 Cliquez ou glissez-déposez vos fichiers texte ici\n\n(plusieurs fichiers à la fois)';
+                this.fileInput.value = '';
+            }
+
+            async handleFiles(files) {
+                // Filtrer uniquement les .txt
+                const txtFiles = files.filter(f => f.name.toLowerCase().endsWith('.txt'));
+                
+                if (txtFiles.length === 0) {
+                    this.error.textContent = '❌ Veuillez sélectionner des fichiers .txt';
+                    return;
                 }
-            }
-            
-            if (newFilesAdded) {
-                updateFilesList();
-                checkAssembleButton();
-            }
-            
-            // Réinitialiser l'input pour permettre de resélectionner les mêmes fichiers
-            fileInput.value = '';
-        }
 
-        // Mettre à jour la liste des fichiers
-        function updateFilesList() {
-            filesList.innerHTML = '';
-            
-            if (uploadedFiles.size === 0) {
-                filesInfo.style.display = 'none';
-                return;
-            }
-            
-            filesInfo.style.display = 'block';
-            
-            // Trier par numéro
-            const sortedFiles = Array.from(uploadedFiles.entries()).sort((a, b) => a[0] - b[0]);
-            let totalBytes = 0;
-            
-            sortedFiles.forEach(([number, file]) => {
-                totalBytes += file.size;
-                
-                const fileElement = document.createElement('div');
-                fileElement.className = 'file-item';
-                
-                const numberSpan = document.createElement('span');
-                numberSpan.className = 'file-number';
-                numberSpan.textContent = number;
-                
-                const nameSpan = document.createElement('span');
-                nameSpan.className = 'file-name';
-                nameSpan.textContent = file.name;
-                
-                const sizeSpan = document.createElement('span');
-                sizeSpan.className = 'file-size';
-                sizeSpan.textContent = formatSize(file.size);
-                
-                const statusSpan = document.createElement('span');
-                statusSpan.className = 'file-status status-ok';
-                statusSpan.textContent = '✓ Reçu';
-                
-                const removeBtn = document.createElement('button');
-                removeBtn.textContent = '✗';
-                removeBtn.style.background = '#dc3545';
-                removeBtn.style.color = 'white';
-                removeBtn.style.border = 'none';
-                removeBtn.style.borderRadius = '50%';
-                removeBtn.style.width = '25px';
-                removeBtn.style.height = '25px';
-                removeBtn.style.cursor = 'pointer';
-                removeBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    uploadedFiles.delete(number);
-                    updateFilesList();
-                    checkAssembleButton();
-                };
-                
-                fileElement.appendChild(numberSpan);
-                fileElement.appendChild(nameSpan);
-                fileElement.appendChild(sizeSpan);
-                fileElement.appendChild(statusSpan);
-                fileElement.appendChild(removeBtn);
-                
-                filesList.appendChild(fileElement);
-            });
-            
-            // Mettre à jour les stats
-            totalFilesCount.textContent = uploadedFiles.size;
-            totalSize.textContent = formatSize(totalBytes);
-            
-            // Calculer les fichiers manquants
-            const maxNum = maxFileNumber;
-            let missing = [];
-            for (let i = 1; i <= maxNum; i++) {
-                if (!uploadedFiles.has(i)) {
-                    missing.push(i);
+                this.error.textContent = '';
+                this.uploadArea.textContent = `📂 ${txtFiles.length} fichier(s) sélectionné(s)`;
+
+                // Traiter chaque fichier
+                for (const file of txtFiles) {
+                    await this.processFile(file);
                 }
-            }
-            
-            if (missing.length > 0) {
-                const missingElement = document.createElement('div');
-                missingElement.style.marginTop = '15px';
-                missingElement.style.padding = '10px';
-                missingElement.style.background = '#fff3cd';
-                missingElement.style.borderRadius = '10px';
-                missingElement.style.color = '#856404';
-                missingElement.innerHTML = `<strong>⚠️ Fichiers manquants :</strong> ${missing.join(', ')}`;
-                filesList.appendChild(missingElement);
-            }
-            
-            missingFilesCount.textContent = missing.length;
-        }
 
-        // Vérifier si on peut activer le bouton d'assemblage
-        function checkAssembleButton() {
-            if (uploadedFiles.size === 0) {
-                assembleBtn.disabled = true;
-                return;
+                this.displayFileList();
+                this.checkCompleteness();
             }
-            
-            // Vérifier s'il y a des trous dans la numérotation
-            let hasGaps = false;
-            for (let i = 1; i <= maxFileNumber; i++) {
-                if (!uploadedFiles.has(i)) {
-                    hasGaps = true;
-                    break;
+
+            async processFile(file) {
+                // Extraire le numéro du nom de fichier (1.txt, 2.txt, etc.)
+                const match = file.name.match(/^(\d+)\.txt$/);
+                if (!match) {
+                    this.error.textContent += `⚠️ Fichier ignoré (nom invalide) : ${file.name}\n`;
+                    return;
                 }
-            }
-            
-            assembleBtn.disabled = hasGaps;
-            
-            if (hasGaps) {
-                showMessage('Il manque des parties pour reconstruire le fichier', 'warning');
-            } else {
-                showMessage('Toutes les parties sont présentes ! Vous pouvez reconstruire le fichier', 'success');
-            }
-        }
 
-        // Assembler les fichiers
-        assembleBtn.addEventListener('click', async () => {
-            if (uploadedFiles.size === 0) return;
-            
-            assembleBtn.disabled = true;
-            progressContainer.style.display = 'block';
-            
-            try {
-                // Trier les fichiers par numéro
-                const sortedFiles = Array.from(uploadedFiles.entries())
-                    .sort((a, b) => a[0] - b[0])
-                    .map(([_, file]) => file);
+                const fileNumber = parseInt(match[1], 10);
                 
-                showMessage(`Assemblage de ${sortedFiles.length} parties en cours...`, 'success');
-                
-                // Lire tous les fichiers en Data URL
-                const dataURLs = [];
-                let totalProgress = 0;
-                
-                for (let i = 0; i < sortedFiles.length; i++) {
-                    const file = sortedFiles[i];
-                    const dataURL = await readFileAsDataURL(file);
-                    dataURLs.push(dataURL);
+                try {
+                    // Lire le contenu du fichier
+                    const content = await this.readFileContent(file);
                     
-                    totalProgress = ((i + 1) / sortedFiles.length) * 50;
-                    progressFill.style.width = `${totalProgress}%`;
-                    progressText.textContent = `Lecture des parties: ${Math.round(totalProgress)}%`;
-                }
-                
-                progressText.textContent = `Assemblage des données: 50%`;
-                
-                // Extraire et concaténer les données base64
-                let base64Data = '';
-                let mimeType = null;
-                
-                for (let i = 0; i < dataURLs.length; i++) {
-                    const dataURL = dataURLs[i];
-                    const parts = dataURL.split(',');
+                    // Stocker le fichier
+                    this.files.set(fileNumber, {
+                        file: file,
+                        content: content,
+                        number: fileNumber,
+                        size: content.length
+                    });
                     
-                    // Garder le premier MIME type trouvé
-                    if (i === 0) {
-                        const mimeMatch = parts[0].match(/:(.*?);/);
-                        if (mimeMatch) {
-                            mimeType = mimeMatch[1];
+                    this.expectedCount = Math.max(this.expectedCount, fileNumber);
+                } catch (error) {
+                    this.error.textContent += `❌ Erreur lecture ${file.name}: ${error.message}\n`;
+                }
+            }
+
+            readFileContent(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = (e) => reject(new Error('Erreur de lecture'));
+                    reader.readAsText(file);
+                });
+            }
+
+            displayFileList() {
+                this.fileListContainer.style.display = 'block';
+                this.fileList.innerHTML = '';
+                
+                // Trier par numéro
+                const sortedFiles = Array.from(this.files.entries())
+                    .sort((a, b) => a[0] - b[0]);
+                
+                let lastNum = 0;
+                for (const [num, data] of sortedFiles) {
+                    const div = document.createElement('div');
+                    div.className = 'file-item';
+                    
+                    // Vérifier s'il manque des numéros avant celui-ci
+                    if (num > lastNum + 1) {
+                        for (let i = lastNum + 1; i < num; i++) {
+                            const missingDiv = document.createElement('div');
+                            missingDiv.className = 'file-item invalid';
+                            missingDiv.innerHTML = `
+                                <span style="color: #f44336;">
+                                    ⚠️ Fichier ${i}.txt manquant
+                                </span>
+                                <span class="badge badge-error">Manquant</span>
+                            `;
+                            this.fileList.appendChild(missingDiv);
                         }
                     }
                     
-                    base64Data += parts[1];
+                    // Afficher le fichier présent
+                    div.innerHTML = `
+                        <span>
+                            📄 ${num}.txt 
+                            <small style="color: #666;">(${this.formatSize(data.size)} caractères)</small>
+                        </span>
+                        <span class="badge badge-success">Présent</span>
+                    `;
+                    this.fileList.appendChild(div);
                     
-                    totalProgress = 50 + ((i + 1) / dataURLs.length) * 50;
-                    progressFill.style.width = `${totalProgress}%`;
-                    progressText.textContent = `Assemblage: ${Math.round(totalProgress)}%`;
+                    lastNum = num;
+                }
+                
+                // Vérifier les fichiers manquants après le dernier
+                if (this.expectedCount > lastNum) {
+                    for (let i = lastNum + 1; i <= this.expectedCount; i++) {
+                        const missingDiv = document.createElement('div');
+                        missingDiv.className = 'file-item invalid';
+                        missingDiv.innerHTML = `
+                            <span style="color: #f44336;">
+                                ⚠️ Fichier ${i}.txt manquant
+                            </span>
+                            <span class="badge badge-error">Manquant</span>
+                        `;
+                        this.fileList.appendChild(missingDiv);
+                    }
+                }
+                
+                this.fileCount.textContent = `📊 ${this.files.size} fichier(s) présent(s) sur ${this.expectedCount || '?'} attendu(s)`;
+            }
+
+            checkCompleteness() {
+                let complete = true;
+                let missing = [];
+                
+                // Vérifier que tous les fichiers de 1 à expectedCount sont présents
+                for (let i = 1; i <= this.expectedCount; i++) {
+                    if (!this.files.has(i)) {
+                        complete = false;
+                        missing.push(i);
+                    }
+                }
+                
+                if (complete && this.expectedCount > 0) {
+                    this.reconstructBtn.disabled = false;
+                    this.error.textContent = '✅ Tous les fichiers sont présents ! Vous pouvez reconstruire.';
+                } else {
+                    this.reconstructBtn.disabled = true;
+                    if (missing.length > 0) {
+                        this.error.textContent = `❌ Fichiers manquants : ${missing.join(', ')}.txt`;
+                    }
+                }
+            }
+
+            formatSize(bytes) {
+                if (bytes === 0) return '0';
+                const k = 1024;
+                const sizes = ['', 'K', 'M', 'G'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            async reconstructFile() {
+                if (this.files.size === 0) return;
+                
+                this.reconstructBtn.disabled = true;
+                this.progress.style.display = 'block';
+                this.stats.style.display = 'none';
+                this.error.textContent = '';
+                
+                const startTime = performance.now();
+                
+                try {
+                    // Trier les fichiers par numéro
+                    const sortedFiles = Array.from(this.files.entries())
+                        .sort((a, b) => a[0] - b[0]);
                     
-                    await new Promise(resolve => setTimeout(resolve, 5));
-                }
-                
-                progressText.textContent = `Reconstruction finale: 100%`;
-                
-                // Reconstruire le fichier
-                const fullDataURL = `data:${mimeType || 'application/octet-stream'};base64,${base64Data}`;
-                reconstructedBlob = dataURLToBlob(fullDataURL);
-                
-                // Essayer de déterminer le nom original du fichier
-                if (sortedFiles.length > 0) {
-                    const firstFileName = sortedFiles[0].name;
-                    // Enlever .partX ou le numéro
-                    originalFileName = firstFileName.replace(/\.part\d+$|^\d+$/, '') || 'fichier_reconstruit';
-                    if (!originalFileName) originalFileName = 'fichier_reconstruit';
-                }
-                
-                reconstructedMimeType = mimeType;
-                
-                // Afficher la section de téléchargement
-                displayDownloadSection(sortedFiles.length, reconstructedBlob.size, mimeType);
-                
-                progressContainer.style.display = 'none';
-                showMessage('Fichier reconstruit avec succès !', 'success');
-                
-            } catch (error) {
-                console.error('Erreur assemblage:', error);
-                showMessage('Erreur lors de l\'assemblage: ' + error.message, 'error');
-                progressContainer.style.display = 'none';
-            } finally {
-                assembleBtn.disabled = false;
-            }
-        });
-
-        // Lire un fichier en Data URL
-        function readFileAsDataURL(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = (e) => reject(e);
-                reader.readAsDataURL(file);
-            });
-        }
-
-        // Convertir Data URL en Blob
-        function dataURLToBlob(dataURL) {
-            try {
-                const parts = dataURL.split(',');
-                const mime = parts[0].match(/:(.*?);/)[1];
-                const bstr = atob(parts[1]);
-                let n = bstr.length;
-                const u8arr = new Uint8Array(n);
-                
-                while (n--) {
-                    u8arr[n] = bstr.charCodeAt(n);
-                }
-                
-                return new Blob([u8arr], { type: mime });
-            } catch (error) {
-                console.error('Erreur conversion DataURL -> Blob:', error);
-                throw error;
-            }
-        }
-
-        // Afficher la section de téléchargement
-        function displayDownloadSection(partsCount, blobSize, mimeType) {
-            originalFileNameSpan.textContent = originalFileName || 'fichier_reconstruit';
-            reconstructedFileSize.textContent = formatSize(blobSize);
-            
-            let typeDisplay = mimeType || 'Inconnu';
-            if (mimeType) {
-                const typeParts = mimeType.split('/');
-                if (typeParts.length > 1) {
-                    typeDisplay = typeParts[1].toUpperCase();
+                    // Concaténer tout le contenu
+                    this.progressText.textContent = 'Concaténation des parties...';
+                    this.progressFill.style.width = '30%';
+                    
+                    let fullDataUrl = '';
+                    for (let i = 0; i < sortedFiles.length; i++) {
+                        const [num, data] = sortedFiles[i];
+                        fullDataUrl += data.content;
+                        
+                        // Mise à jour de la progression
+                        this.progressFill.style.width = `${30 + ((i + 1) / sortedFiles.length) * 40}%`;
+                        this.progressText.textContent = `Concaténation : ${i + 1}/${sortedFiles.length}`;
+                        
+                        // Laisser le navigateur respirer toutes les 10 parties
+                        if (i % 10 === 0) {
+                            await new Promise(resolve => setTimeout(resolve, 10));
+                        }
+                    }
+                    
+                    // Vérification rapide que c'est une Data URL valide
+                    this.progressText.textContent = 'Validation de la Data URL...';
+                    this.progressFill.style.width = '80%';
+                    
+                    if (!fullDataUrl.startsWith('data:')) {
+                        throw new Error('Le fichier reconstitué ne commence pas par "data:" - fichier corrompu ?');
+                    }
+                    
+                    this.reconstructedDataUrl = fullDataUrl;
+                    
+                    // Essayer d'extraire le nom original du fichier
+                    try {
+                        const mimeMatch = fullDataUrl.match(/data:([^;]+);/);
+                        if (mimeMatch) {
+                            const mime = mimeMatch[1];
+                            const ext = mime.split('/')[1] || 'bin';
+                            this.originalFileName = `fichier_reconstitue.${ext}`;
+                        } else {
+                            this.originalFileName = 'fichier_reconstitue.bin';
+                        }
+                    } catch {
+                        this.originalFileName = 'fichier_reconstitue.bin';
+                    }
+                    
+                    // Statistiques
+                    const endTime = performance.now();
+                    const duration = ((endTime - startTime) / 1000).toFixed(2);
+                    
+                    this.progressFill.style.width = '100%';
+                    this.progressText.textContent = '✅ Reconstruction terminée !';
+                    
+                    // Afficher les stats
+                    this.stats.style.display = 'block';
+                    this.stats.innerHTML = `
+                        <strong>📊 Statistiques de reconstruction :</strong><br>
+                        Nombre de parties : ${sortedFiles.length}<br>
+                        Taille totale reconstituée : ${this.formatSize(fullDataUrl.length)} caractères<br>
+                        Type détecté : ${this.originalFileName || 'Inconnu'}<br>
+                        Temps de reconstruction : ${duration} secondes<br>
+                        <span class="success">✅ Prêt à télécharger !</span>
+                    `;
+                    
+                    // Afficher le bouton de téléchargement
+                    this.downloadBtn.style.display = 'inline-block';
+                    
+                } catch (error) {
+                    this.error.textContent = `❌ Erreur de reconstruction : ${error.message}`;
+                    console.error(error);
+                    this.downloadBtn.style.display = 'none';
+                } finally {
+                    this.reconstructBtn.disabled = false;
                 }
             }
-            reconstructedFileType.textContent = typeDisplay;
-            assembledPartsCount.textContent = partsCount;
-            
-            downloadSection.style.display = 'block';
-        }
 
-        // Télécharger le fichier reconstruit
-        downloadBtn.addEventListener('click', () => {
-            if (reconstructedBlob) {
-                const url = URL.createObjectURL(reconstructedBlob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = originalFileName || 'fichier_reconstruit';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+            downloadReconstructedFile() {
+                if (!this.reconstructedDataUrl) return;
                 
-                showMessage('Téléchargement démarré !', 'success');
+                try {
+                    // Créer un lien de téléchargement
+                    const link = document.createElement('a');
+                    link.href = this.reconstructedDataUrl;
+                    link.download = this.originalFileName || 'fichier_reconstitue.bin';
+                    link.click();
+                    
+                    this.error.textContent = '✅ Fichier téléchargé avec succès !';
+                    this.error.className = 'success';
+                } catch (error) {
+                    this.error.textContent = `❌ Erreur de téléchargement : ${error.message}`;
+                    this.error.className = 'error';
+                }
             }
-        });
-
-        // Réinitialiser tout
-        function resetAll() {
-            uploadedFiles.clear();
-            maxFileNumber = 0;
-            reconstructedBlob = null;
-            originalFileName = null;
-            reconstructedMimeType = null;
-            
-            filesList.innerHTML = '';
-            filesInfo.style.display = 'none';
-            downloadSection.style.display = 'none';
-            progressContainer.style.display = 'none';
-            progressFill.style.width = '0%';
-            progressText.textContent = '0%';
-            assembleBtn.disabled = true;
-            
-            showMessage('Réinitialisation effectuée', 'success');
         }
 
-        clearAllBtn.addEventListener('click', resetAll);
-        resetBtn.addEventListener('click', resetAll);
-
-        // Lien vers la version découpage
-        document.getElementById('decoupageLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            showMessage('Version découpage - Ouvrez l\'autre fichier HTML', 'success');
-        });
-
-        console.log('Application de réassemblage prête');
+        // Initialisation
+        new FileReconstructor();
     </script>
 </body>
 </html>
