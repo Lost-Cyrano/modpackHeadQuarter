@@ -114,10 +114,10 @@
 
     <script>
         // LIMITE GITHUB : 20 Mo STRICT
-        const LIMITE_GITHUB_OCTETS = 20 * 1024 * 1024; // 20,971,520 octets (20 Mo exact)
+        const LIMITE_GITHUB_OCTETS = 10 * 1024 * 1024; // 20,971,520 octets (20 Mo exact)
         
         // MARGE DE SÉCURITÉ : on utilise 19.9 Mo pour être SÛR de jamais dépasser
-        const TAILLE_MAX_CARACTERES = Math.floor(19.9 * 1024 * 1024); // 20,856,832 caractères max
+        const TAILLE_MAX_CARACTERES = Math.floor(9.9 * 1024 * 1024); // 20,856,832 caractères max
         
         class GitHubFileCutter {
             constructor() {
