@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Découpeur GitHub 24.9 Mo - Data URL</title>
+    <title>Découpeur GitHub 20 Mo - Data URL</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -89,9 +89,9 @@
 </head>
 <body>
     <div class="container">
-        <h1>📦 Découpeur GitHub 24.9 Mo</h1>
-        <p>Découpe n'importe quel fichier en parties de <strong>24.9 Mo maximum</strong> (compatibles GitHub).</p>
-        <p class="warning">⚠️ Chaque fichier texte fait <strong>moins de 25 Mo</strong> pour pouvoir être uploadé sur GitHub.</p>
+        <h1>📦 Découpeur GitHub 20 Mo</h1>
+        <p>Découpe n'importe quel fichier en parties de <strong>20 Mo maximum</strong> (compatibles GitHub).</p>
+        <p class="warning">⚠️ Chaque fichier texte fait <strong>moins de 20 Mo</strong> (limite GitHub).</p>
         
         <div id="uploadArea" class="upload-area">
             📁 Cliquez ou glissez-déposez un fichier ici
@@ -113,15 +113,15 @@
     </div>
 
     <script>
-        // LIMITE POUR GITHUB : 24.9 Mo POUR CHAQUE FICHIER TEXTE
-        const TAILLE_MAX_GITHUB = 24.9 * 1024 * 1024; // 26,112,614.4 octets
-        // MARGE DE SÉCURITÉ : on utilise 24.8 Mo pour être sûr de jamais dépasser
-        const TAILLE_MAX_CARACTERES = Math.floor(24.8 * 1024 * 1024); // 26,001,612 caractères max
+        // LIMITE GITHUB : 20 Mo STRICT
+        const LIMITE_GITHUB_OCTETS = 20 * 1024 * 1024; // 20,971,520 octets (20 Mo exact)
+        
+        // MARGE DE SÉCURITÉ : on utilise 19.9 Mo pour être SÛR de jamais dépasser
+        const TAILLE_MAX_CARACTERES = Math.floor(19.9 * 1024 * 1024); // 20,856,832 caractères max
         
         class GitHubFileCutter {
             constructor() {
                 this.file = null;
-                this.dataUrl = null;
                 this.parts = [];
                 this.init();
             }
@@ -172,18 +172,18 @@
                 this.warning.textContent = '';
                 this.processBtn.disabled = false;
                 
-                // Estimation de la taille Data URL (environ +33% pour base64)
+                // Estimation de la taille Data URL (base64 ~ +33%)
                 const estimatedDataUrlSize = file.size * 1.37;
                 const estimatedParts = Math.ceil(estimatedDataUrlSize / TAILLE_MAX_CARACTERES);
                 
                 this.uploadArea.textContent = `📄 Fichier sélectionné : ${file.name} (${this.formatSize(file.size)})`;
                 
                 if (estimatedParts > 100) {
-                    this.warning.textContent = `⚠️ Attention : environ ${estimatedParts} parties seront créées. Le téléchargement peut prendre du temps.`;
+                    this.warning.textContent = `⚠️ Attention : environ ${estimatedParts} parties seront créées.`;
                 }
                 
-                if (file.size > 1000 * 1024 * 1024) {
-                    this.warning.textContent = '⚠️ Fichier très volumineux (>1 Go). Le traitement peut prendre plusieurs minutes.';
+                if (file.size > 1024 * 1024 * 1024) {
+                    this.warning.textContent = '⚠️ Fichier >1 Go. Traitement long.';
                 }
             }
 
@@ -195,7 +195,7 @@
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
 
-            // Conversion en Data URL
+            // Conversion fichier → Data URL
             fileToDataURL(file) {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -205,40 +205,40 @@
                 });
             }
 
-            // Découpage avec GARANTIE que chaque partie fait MOINS DE 25 Mo
+            // Découpage avec GARANTIE 20 Mo max
             splitDataURL(dataUrl) {
                 const parts = [];
                 let currentPosition = 0;
                 const totalLength = dataUrl.length;
                 
                 while (currentPosition < totalLength) {
-                    // On prend EXACTEMENT TAILLE_MAX_CARACTERES caractères ou moins
-                    // C'est STRICTEMENT INFÉRIEUR à 25 Mo (marge de sécurité)
+                    // PRISE EN COMPTE DE LA LIMITE 20 Mo
                     const endPosition = Math.min(currentPosition + TAILLE_MAX_CARACTERES, totalLength);
-                    const part = dataUrl.substring(currentPosition, endPosition);
+                    let part = dataUrl.substring(currentPosition, endPosition);
                     
-                    // Vérification de sécurité
-                    if (new Blob([part]).size >= 25 * 1024 * 1024) {
-                        console.error('Partie trop grosse !', new Blob([part]).size);
-                        // Si jamais ça arrive (bug), on réduit encore
-                        const safeEnd = currentPosition + Math.floor(TAILLE_MAX_CARACTERES * 0.9);
-                        parts.push(dataUrl.substring(currentPosition, safeEnd));
-                        currentPosition = safeEnd;
-                    } else {
-                        parts.push(part);
-                        currentPosition = endPosition;
+                    // VÉRIFICATION DE SÉCURITÉ : la partie fait-elle moins de 20 Mo ?
+                    let partSize = new Blob([part]).size;
+                    
+                    // Si c'est trop gros (bug improbable), on réduit jusqu'à être sous 20 Mo
+                    while (partSize >= LIMITE_GITHUB_OCTETS && part.length > 1) {
+                        part = part.substring(0, Math.floor(part.length * 0.9));
+                        partSize = new Blob([part]).size;
                     }
+                    
+                    parts.push(part);
+                    currentPosition += part.length;
                 }
                 
                 return parts;
             }
 
-            // Téléchargement avec délai pour GitHub
+            // Téléchargement avec VÉRIFICATION FINALE
             async downloadPart(content, index, total) {
-                // Vérification finale pour GitHub
+                // VÉRIFICATION ABSOLUE : moins de 20 Mo
                 const sizeInBytes = new Blob([content]).size;
-                if (sizeInBytes >= 25 * 1024 * 1024) {
-                    throw new Error(`ERREUR CRITIQUE : La partie ${index + 1} fait ${this.formatSize(sizeInBytes)} (>25 Mo) - Non compatible GitHub`);
+                
+                if (sizeInBytes >= LIMITE_GITHUB_OCTETS) {
+                    throw new Error(`❌ PARTIE ${index + 1} TROP GROSSE : ${this.formatSize(sizeInBytes)} > 20 Mo`);
                 }
                 
                 const blob = new Blob([content], { type: 'text/plain' });
@@ -249,7 +249,7 @@
                 a.click();
                 
                 URL.revokeObjectURL(url);
-                await new Promise(resolve => setTimeout(resolve, 100)); // Délai plus long pour GitHub
+                await new Promise(resolve => setTimeout(resolve, 100));
                 
                 this.progressText.textContent = `Téléchargement ${index + 1}/${total} (${this.formatSize(sizeInBytes)})`;
                 this.progressFill.style.width = `${((index + 1) / total) * 100}%`;
@@ -269,32 +269,31 @@
                 const startTime = performance.now();
 
                 try {
-                    // ÉTAPE 1 : Conversion en Data URL
+                    // ÉTAPE 1 : Conversion
                     this.progressText.textContent = 'Conversion en Data URL...';
                     this.progressFill.style.width = '5%';
                     
                     const dataUrl = await this.fileToDataURL(this.file);
                     
-                    // ÉTAPE 2 : Découpage avec limite GitHub
-                    this.progressText.textContent = 'Découpage (max 24.9 Mo par fichier)...';
+                    // ÉTAPE 2 : Découpage (max 19.9 Mo caractères)
+                    this.progressText.textContent = 'Découpage (max 19.9 Mo par fichier)...';
                     this.progressFill.style.width = '20%';
                     
                     const parts = this.splitDataURL(dataUrl);
                     
-                    // Vérification que toutes les parties sont compatibles GitHub
+                    // VÉRIFICATION FINALE : chaque partie < 20 Mo
                     for (let i = 0; i < parts.length; i++) {
                         const size = new Blob([parts[i]]).size;
-                        if (size >= 25 * 1024 * 1024) {
-                            throw new Error(`Partie ${i + 1} trop grosse pour GitHub : ${this.formatSize(size)}`);
+                        if (size >= LIMITE_GITHUB_OCTETS) {
+                            throw new Error(`Partie ${i + 1} trop grosse : ${this.formatSize(size)} > 20 Mo`);
                         }
                     }
                     
-                    // ÉTAPE 3 : Téléchargement séquentiel
-                    this.progressText.textContent = `Préparation du téléchargement (${parts.length} fichiers)...`;
+                    // ÉTAPE 3 : Téléchargement
+                    this.progressText.textContent = `Téléchargement (${parts.length} fichiers)...`;
                     this.progressFill.style.width = '40%';
                     
-                    // Petit délai pour laisser le navigateur respirer
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await new Promise(resolve => setTimeout(resolve, 300));
                     
                     for (let i = 0; i < parts.length; i++) {
                         await this.downloadPart(parts[i], i, parts.length);
@@ -305,19 +304,16 @@
                     const duration = ((endTime - startTime) / 1000).toFixed(2);
                     
                     this.progressFill.style.width = '100%';
-                    this.progressText.textContent = '✅ Découpage terminé ! Tous les fichiers sont compatibles GitHub.';
+                    this.progressText.textContent = '✅ Découpage terminé !';
                     
                     this.stats.style.display = 'block';
                     this.stats.innerHTML = `
                         <strong>📊 Statistiques :</strong><br>
-                        Fichier original : ${this.file.name}<br>
-                        Taille originale : ${this.formatSize(this.file.size)}<br>
-                        Taille Data URL : ${this.formatSize(dataUrl.length)}<br>
-                        Nombre de parties : ${parts.length}<br>
-                        Taille max par partie : <strong>24.9 Mo (compatible GitHub)</strong><br>
-                        Temps total : ${duration} secondes<br>
-                        <br>
-                        <span style="color: #4CAF50;">✅ Ces fichiers peuvent être uploadés sur GitHub !</span>
+                        Fichier : ${this.file.name}<br>
+                        Taille : ${this.formatSize(this.file.size)}<br>
+                        Parties : ${parts.length}<br>
+                        <strong style="color:#4CAF50;">✅ Tous les fichiers &lt; 20 Mo (compatibles GitHub)</strong><br>
+                        Temps : ${duration} secondes
                     `;
                     
                 } catch (error) {
@@ -329,7 +325,7 @@
             }
         }
 
-        // Initialisation
+        // Lancement
         new GitHubFileCutter();
     </script>
 </body>
