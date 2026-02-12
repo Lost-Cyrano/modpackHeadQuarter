@@ -2,90 +2,335 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Découpeur GitHub Ready 24.5 Mo</title>
-    <style>/* mêmes styles */</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Découpeur GitHub 24.9 Mo - Data URL</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: border 0.3s;
+            margin: 20px 0;
+        }
+        .upload-area:hover {
+            border-color: #666;
+        }
+        .upload-area.dragover {
+            border-color: #2196F3;
+            background: #E3F2FD;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .progress {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #2196F3;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .error {
+            color: #f44336;
+            margin-top: 10px;
+        }
+        .warning {
+            color: #ff9800;
+            margin-top: 10px;
+        }
+        .success {
+            color: #4CAF50;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔪 Découpeur compatible GitHub (≤24.5 Mo/partie)</h1>
-        <p>Chaque fichier texte fait <strong>strictement moins de 25 Mo</strong> pour GitHub.</p>
-        <!-- interface identique -->
+        <h1>📦 Découpeur GitHub 24.9 Mo</h1>
+        <p>Découpe n'importe quel fichier en parties de <strong>24.9 Mo maximum</strong> (compatibles GitHub).</p>
+        <p class="warning">⚠️ Chaque fichier texte fait <strong>moins de 25 Mo</strong> pour pouvoir être uploadé sur GitHub.</p>
+        
+        <div id="uploadArea" class="upload-area">
+            📁 Cliquez ou glissez-déposez un fichier ici
+        </div>
+        <input type="file" id="fileInput" style="display: none;">
+        
+        <div id="progress" class="progress">
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <p id="progressText">Préparation...</p>
+        </div>
+        
+        <div id="stats" class="stats" style="display: none;"></div>
+        <div id="error" class="error"></div>
+        <div id="warning" class="warning"></div>
+        
+        <button id="processBtn" disabled>🚀 Découper et télécharger</button>
     </div>
 
     <script>
-        // 🔥 NOUVELLE TAILLE MAX : 24.5 Mo (marge pour GitHub)
-        const TAILLE_MAX = 24.5 * 1024 * 1024; // 25 690 112 caractères max
+        // LIMITE POUR GITHUB : 24.9 Mo POUR CHAQUE FICHIER TEXTE
+        const TAILLE_MAX_GITHUB = 24.9 * 1024 * 1024; // 26,112,614.4 octets
+        // MARGE DE SÉCURITÉ : on utilise 24.8 Mo pour être sûr de jamais dépasser
+        const TAILLE_MAX_CARACTERES = Math.floor(24.8 * 1024 * 1024); // 26,001,612 caractères max
         
-        class FileCutter {
-            constructor() { /* ... mêmes initialisations ... */ }
+        class GitHubFileCutter {
+            constructor() {
+                this.file = null;
+                this.dataUrl = null;
+                this.parts = [];
+                this.init();
+            }
+
+            init() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.fileInput = document.getElementById('fileInput');
+                this.processBtn = document.getElementById('processBtn');
+                this.progress = document.getElementById('progress');
+                this.progressFill = document.getElementById('progressFill');
+                this.progressText = document.getElementById('progressText');
+                this.stats = document.getElementById('stats');
+                this.error = document.getElementById('error');
+                this.warning = document.getElementById('warning');
+
+                this.bindEvents();
+            }
+
+            bindEvents() {
+                this.uploadArea.addEventListener('click', () => this.fileInput.click());
+                
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+                
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('dragover');
+                });
+                
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    const file = e.dataTransfer.files[0];
+                    if (file) this.handleFile(file);
+                });
+                
+                this.fileInput.addEventListener('change', (e) => {
+                    if (e.target.files[0]) this.handleFile(e.target.files[0]);
+                });
+                
+                this.processBtn.addEventListener('click', () => this.processFile());
+            }
 
             async handleFile(file) {
                 this.file = file;
+                this.error.textContent = '';
+                this.warning.textContent = '';
                 this.processBtn.disabled = false;
                 
-                // Message d'avertissement si le fichier est énorme
-                const estimatedParts = Math.ceil(file.size / (TAILLE_MAX * 0.75)); // Approximation Base64
-                this.uploadArea.textContent = `📄 ${file.name} (${this.formatSize(file.size)}) ~ ${estimatedParts} parties`;
+                // Estimation de la taille Data URL (environ +33% pour base64)
+                const estimatedDataUrlSize = file.size * 1.37;
+                const estimatedParts = Math.ceil(estimatedDataUrlSize / TAILLE_MAX_CARACTERES);
+                
+                this.uploadArea.textContent = `📄 Fichier sélectionné : ${file.name} (${this.formatSize(file.size)})`;
+                
+                if (estimatedParts > 100) {
+                    this.warning.textContent = `⚠️ Attention : environ ${estimatedParts} parties seront créées. Le téléchargement peut prendre du temps.`;
+                }
+                
+                if (file.size > 1000 * 1024 * 1024) {
+                    this.warning.textContent = '⚠️ Fichier très volumineux (>1 Go). Le traitement peut prendre plusieurs minutes.';
+                }
             }
 
-            // ✅ Découpe en parties de EXACTEMENT TAILLE_MAX caractères sauf dernière
+            formatSize(bytes) {
+                if (bytes === 0) return '0 octets';
+                const k = 1024;
+                const sizes = ['octets', 'Ko', 'Mo', 'Go'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            // Conversion en Data URL
+            fileToDataURL(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            // Découpage avec GARANTIE que chaque partie fait MOINS DE 25 Mo
             splitDataURL(dataUrl) {
                 const parts = [];
-                let pos = 0;
-                const len = dataUrl.length;
-                const chunkSize = Math.floor(TAILLE_MAX); // 24.5 Mo en caractères
+                let currentPosition = 0;
+                const totalLength = dataUrl.length;
                 
-                while (pos < len) {
-                    const end = Math.min(pos + chunkSize, len);
-                    parts.push(dataUrl.substring(pos, end));
-                    pos = end;
+                while (currentPosition < totalLength) {
+                    // On prend EXACTEMENT TAILLE_MAX_CARACTERES caractères ou moins
+                    // C'est STRICTEMENT INFÉRIEUR à 25 Mo (marge de sécurité)
+                    const endPosition = Math.min(currentPosition + TAILLE_MAX_CARACTERES, totalLength);
+                    const part = dataUrl.substring(currentPosition, endPosition);
+                    
+                    // Vérification de sécurité
+                    if (new Blob([part]).size >= 25 * 1024 * 1024) {
+                        console.error('Partie trop grosse !', new Blob([part]).size);
+                        // Si jamais ça arrive (bug), on réduit encore
+                        const safeEnd = currentPosition + Math.floor(TAILLE_MAX_CARACTERES * 0.9);
+                        parts.push(dataUrl.substring(currentPosition, safeEnd));
+                        currentPosition = safeEnd;
+                    } else {
+                        parts.push(part);
+                        currentPosition = endPosition;
+                    }
                 }
+                
                 return parts;
             }
 
-            async processFile() {
-                // ... (début identique)
+            // Téléchargement avec délai pour GitHub
+            async downloadPart(content, index, total) {
+                // Vérification finale pour GitHub
+                const sizeInBytes = new Blob([content]).size;
+                if (sizeInBytes >= 25 * 1024 * 1024) {
+                    throw new Error(`ERREUR CRITIQUE : La partie ${index + 1} fait ${this.formatSize(sizeInBytes)} (>25 Mo) - Non compatible GitHub`);
+                }
                 
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${index + 1}.txt`;
+                a.click();
+                
+                URL.revokeObjectURL(url);
+                await new Promise(resolve => setTimeout(resolve, 100)); // Délai plus long pour GitHub
+                
+                this.progressText.textContent = `Téléchargement ${index + 1}/${total} (${this.formatSize(sizeInBytes)})`;
+                this.progressFill.style.width = `${((index + 1) / total) * 100}%`;
+            }
+
+            async processFile() {
+                if (!this.file) {
+                    this.error.textContent = '❌ Veuillez sélectionner un fichier';
+                    return;
+                }
+
+                this.processBtn.disabled = true;
+                this.progress.style.display = 'block';
+                this.stats.style.display = 'none';
+                this.error.textContent = '';
+
+                const startTime = performance.now();
+
                 try {
-                    // Étape 1: Data URL
+                    // ÉTAPE 1 : Conversion en Data URL
                     this.progressText.textContent = 'Conversion en Data URL...';
+                    this.progressFill.style.width = '5%';
+                    
                     const dataUrl = await this.fileToDataURL(this.file);
                     
-                    // Étape 2: Découpage en parties ≤ 24.5 Mo
-                    this.progressText.textContent = 'Découpage...';
+                    // ÉTAPE 2 : Découpage avec limite GitHub
+                    this.progressText.textContent = 'Découpage (max 24.9 Mo par fichier)...';
+                    this.progressFill.style.width = '20%';
+                    
                     const parts = this.splitDataURL(dataUrl);
                     
-                    // ✅ Vérification : taille de chaque partie < 25 Mo
+                    // Vérification que toutes les parties sont compatibles GitHub
                     for (let i = 0; i < parts.length; i++) {
-                        const sizeInMB = parts[i].length / (1024 * 1024);
-                        if (parts[i].length >= 25 * 1024 * 1024) {
-                            throw new Error(`Partie ${i+1} trop grosse (${sizeInMB.toFixed(2)} Mo) !`);
+                        const size = new Blob([parts[i]]).size;
+                        if (size >= 25 * 1024 * 1024) {
+                            throw new Error(`Partie ${i + 1} trop grosse pour GitHub : ${this.formatSize(size)}`);
                         }
                     }
                     
-                    // Étape 3: Téléchargement
+                    // ÉTAPE 3 : Téléchargement séquentiel
+                    this.progressText.textContent = `Préparation du téléchargement (${parts.length} fichiers)...`;
+                    this.progressFill.style.width = '40%';
+                    
+                    // Petit délai pour laisser le navigateur respirer
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
                     for (let i = 0; i < parts.length; i++) {
                         await this.downloadPart(parts[i], i, parts.length);
                     }
                     
                     // Statistiques
+                    const endTime = performance.now();
+                    const duration = ((endTime - startTime) / 1000).toFixed(2);
+                    
+                    this.progressFill.style.width = '100%';
+                    this.progressText.textContent = '✅ Découpage terminé ! Tous les fichiers sont compatibles GitHub.';
+                    
+                    this.stats.style.display = 'block';
                     this.stats.innerHTML = `
-                        <strong>✅ Compatible GitHub :</strong><br>
-                        Fichier : ${this.file.name}<br>
-                        Parties : ${parts.length}<br>
-                        Taille max par fichier : 24.5 Mo<br>
-                        Taille réelle max : ${(Math.max(...parts.map(p => p.length)) / 1024 / 1024).toFixed(2)} Mo
+                        <strong>📊 Statistiques :</strong><br>
+                        Fichier original : ${this.file.name}<br>
+                        Taille originale : ${this.formatSize(this.file.size)}<br>
+                        Taille Data URL : ${this.formatSize(dataUrl.length)}<br>
+                        Nombre de parties : ${parts.length}<br>
+                        Taille max par partie : <strong>24.9 Mo (compatible GitHub)</strong><br>
+                        Temps total : ${duration} secondes<br>
+                        <br>
+                        <span style="color: #4CAF50;">✅ Ces fichiers peuvent être uploadés sur GitHub !</span>
                     `;
                     
                 } catch (error) {
-                    this.error.textContent = `❌ ${error.message}`;
+                    this.error.textContent = `❌ Erreur : ${error.message}`;
+                    console.error(error);
+                } finally {
+                    this.processBtn.disabled = false;
                 }
             }
-
-            // Même downloadPart()
         }
 
-        new FileCutter();
+        // Initialisation
+        new GitHubFileCutter();
     </script>
 </body>
 </html>
